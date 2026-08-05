@@ -19,3 +19,23 @@ export function interopDefault<T>(mod: unknown, depth = 4): T {
   }
   return current as T;
 }
+
+/**
+ * Find a NAMED export through the same UMD interop layers.
+ *
+ * Named exports (e.g. `ActionbarReader` from alt1/ability) can sit on the module
+ * namespace or one level down on module.exports depending on how the bundler
+ * resolved the UMD wrapper, so check each layer rather than assuming.
+ */
+export function interopNamed<T>(mod: unknown, name: string, depth = 4): T | undefined {
+  let current: unknown = mod;
+  for (let i = 0; i <= depth; i++) {
+    if (current === null || typeof current !== "object") break;
+    const record = current as Record<string, unknown>;
+    const found = record[name];
+    if (typeof found === "function") return found as T;
+    if (!("default" in record)) break;
+    current = record.default;
+  }
+  return undefined;
+}
