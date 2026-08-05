@@ -1,0 +1,108 @@
+import { describe, expect, it } from "vitest";
+import { chatAlerter } from "~/alerters/chat";
+import type { AlerterContext, ChatLine, RGB } from "~/engine/types";
+
+function line(text: string, color: RGB = [255, 255, 255]): ChatLine {
+  return { text, color, fragments: [text] };
+}
+
+function ctx(over: Partial<AlerterContext> = {}): AlerterContext {
+  return { tick: 1, now: 0, rsLastActive: 0, chatLines: [], geometry: null, ...over };
+}
+
+const serenVars = {
+  lines: [{ text: "A Seren spirit appears", percent: 100 }],
+  colors: [[0, 255, 255]] as RGB[],
+  resetonactive: true,
+};
+
+describe("chatAlerter", () => {
+  it("triggers on an exact line", () => {
+    const a = chatAlerter.create(serenVars);
+    const r = a.check(ctx({ chatLines: [line("A Seren spirit appears", [0, 255, 255])] }));
+    expect(r.triggered).toBe(true);
+    expect(r.bar).toBe(1);
+  });
+
+  // Real presets are written as fragments of longer messages, e.g.
+  // "has gained a level! It is now level 2".
+  it("matches a substring of a longer line", () => {
+    const a = chatAlerter.create(serenVars);
+    const hit = line("[19:04:22] A Seren spirit appears nearby!", [0, 255, 255]);
+    expect(a.check(ctx({ chatLines: [hit] })).triggered).toBe(true);
+  });
+
+  it("matches case-insensitively", () => {
+    const a = chatAlerter.create(serenVars);
+    expect(
+      a.check(ctx({ chatLines: [line("a seren SPIRIT appears", [0, 255, 255])] })).triggered,
+    ).toBe(true);
+  });
+
+  it("does not trigger on a non-matching line", () => {
+    const a = chatAlerter.create(serenVars);
+    expect(a.check(ctx({ chatLines: [line("You mine some ore.", [0, 255, 255])] })).triggered).toBe(
+      false,
+    );
+  });
+
+  it("respects the colour filter", () => {
+    const a = chatAlerter.create(serenVars);
+    // Right text, wrong colour.
+    expect(
+      a.check(ctx({ chatLines: [line("A Seren spirit appears", [255, 0, 0])] })).triggered,
+    ).toBe(false);
+  });
+
+  it("accepts any colour when no filter is set", () => {
+    const a = chatAlerter.create({ ...serenVars, colors: [] });
+    expect(
+      a.check(ctx({ chatLines: [line("A Seren spirit appears", [123, 45, 6])] })).triggered,
+    ).toBe(true);
+  });
+
+  it("ORs across multiple configured lines", () => {
+    const a = chatAlerter.create({
+      lines: [
+        { text: "nest falls", percent: 100 },
+        { text: "A geode falls", percent: 100 },
+      ],
+      colors: [],
+      resetonactive: true,
+    });
+    expect(a.check(ctx({ chatLines: [line("A geode falls out of the tree")] })).triggered).toBe(true);
+  });
+
+  it("stays triggered across ticks until reset", () => {
+    const a = chatAlerter.create(serenVars);
+    a.check(ctx({ chatLines: [line("A Seren spirit appears", [0, 255, 255])] }));
+    expect(a.check(ctx({ chatLines: [] })).triggered).toBe(true);
+  });
+
+  it("clears on player activity when resetonactive is set", () => {
+    const a = chatAlerter.create(serenVars);
+    a.check(ctx({ rsLastActive: 100, chatLines: [line("A Seren spirit appears", [0, 255, 255])] }));
+    expect(a.check(ctx({ rsLastActive: 100 })).triggered).toBe(true);
+    expect(a.check(ctx({ rsLastActive: 5_000 })).triggered).toBe(false);
+  });
+
+  it("stays triggered through activity when resetonactive is off", () => {
+    const a = chatAlerter.create({ ...serenVars, resetonactive: false });
+    a.check(ctx({ rsLastActive: 100, chatLines: [line("A Seren spirit appears", [0, 255, 255])] }));
+    expect(a.check(ctx({ rsLastActive: 5_000 })).triggered).toBe(true);
+  });
+
+  it("reports non-functional when configured with no match text", () => {
+    const a = chatAlerter.create({ lines: [], colors: [], resetonactive: true });
+    const r = a.check(ctx({ chatLines: [line("anything")] }));
+    expect(r.functional).toBe(false);
+    expect(r.triggered).toBe(false);
+  });
+
+  it("reset() clears the triggered state", () => {
+    const a = chatAlerter.create(serenVars);
+    a.check(ctx({ chatLines: [line("A Seren spirit appears", [0, 255, 255])] }));
+    a.reset?.();
+    expect(a.check(ctx({ chatLines: [] })).triggered).toBe(false);
+  });
+});
