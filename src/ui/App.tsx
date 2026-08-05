@@ -62,7 +62,11 @@ function Row({ a, onTogglePause }: { a: ActiveAlerter; onTogglePause(): void }) 
       <span class="row__name">{a.config.name || "(unnamed)"}</span>
       <span class="row__side">
         {a.error !== null ? <span class="badge badge--err">!</span> : null}
-        {a.error === null && !a.state.functional ? <span class="badge">idle</span> : null}
+        {a.error === null && !a.state.functional ? (
+          <span class="badge" title="This alert cannot see what it needs right now.">
+            no data
+          </span>
+        ) : null}
         <button
           class="iconbtn"
           onClick={onTogglePause}

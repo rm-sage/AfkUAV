@@ -2,11 +2,12 @@ import { render } from "preact";
 import { GeometryWatch } from "~/alt1-io/geometry";
 import {
   captureRs,
+  hasGameState,
+  idleMs,
   identify,
   liveHost,
   makeChatboxReader,
   mixColor,
-  rsLastActive,
   setTooltip,
 } from "~/alt1-io/host";
 import { ChatboxPool } from "~/readers/chatbox-pool";
@@ -28,7 +29,8 @@ const chat = new ChatboxPool({ makeReader: makeChatboxReader, mixColor });
 
 const loop = new TickLoop({
   now: () => Date.now(),
-  rsLastActive,
+  idleMs,
+  hasGameState,
   geometry: new GeometryWatch(liveHost),
   capture: captureRs,
   chat,

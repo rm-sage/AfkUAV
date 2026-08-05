@@ -7,7 +7,7 @@ function line(text: string, color: RGB = [255, 255, 255]): ChatLine {
 }
 
 function ctx(over: Partial<AlerterContext> = {}): AlerterContext {
-  return { tick: 1, now: 0, rsLastActive: 0, chatLines: [], geometry: null, ...over };
+  return { tick: 1, now: 1_000_000, idleMs: 999_999, hasGameState: true, chatLines: [], geometry: null, ...over };
 }
 
 const serenVars = {
@@ -79,17 +79,44 @@ describe("chatAlerter", () => {
     expect(a.check(ctx({ chatLines: [] })).triggered).toBe(true);
   });
 
-  it("clears on player activity when resetonactive is set", () => {
+  // Both quantities are "milliseconds since": idleMs since the last click, and
+  // (now - triggeredAt) since the alert fired. The smaller one happened later.
+  it("clears when the player clicks after the alert fired", () => {
     const a = chatAlerter.create(serenVars);
-    a.check(ctx({ rsLastActive: 100, chatLines: [line("A Seren spirit appears", [0, 255, 255])] }));
-    expect(a.check(ctx({ rsLastActive: 100 })).triggered).toBe(true);
-    expect(a.check(ctx({ rsLastActive: 5_000 })).triggered).toBe(false);
+    a.check(
+      ctx({
+        now: 1_000_000,
+        idleMs: 900_000,
+        chatLines: [line("A Seren spirit appears", [0, 255, 255])],
+      }),
+    );
+    // 5s later, last click was 1s ago -- i.e. after the alert. Clear it.
+    expect(a.check(ctx({ now: 1_005_000, idleMs: 1_000 })).triggered).toBe(false);
+  });
+
+  it("stays triggered while the player remains idle", () => {
+    const a = chatAlerter.create(serenVars);
+    a.check(
+      ctx({
+        now: 1_000_000,
+        idleMs: 900_000,
+        chatLines: [line("A Seren spirit appears", [0, 255, 255])],
+      }),
+    );
+    // 5s later, still no click since long before the alert. Keep it firing.
+    expect(a.check(ctx({ now: 1_005_000, idleMs: 905_000 })).triggered).toBe(true);
   });
 
   it("stays triggered through activity when resetonactive is off", () => {
     const a = chatAlerter.create({ ...serenVars, resetonactive: false });
-    a.check(ctx({ rsLastActive: 100, chatLines: [line("A Seren spirit appears", [0, 255, 255])] }));
-    expect(a.check(ctx({ rsLastActive: 5_000 })).triggered).toBe(true);
+    a.check(
+      ctx({
+        now: 1_000_000,
+        idleMs: 900_000,
+        chatLines: [line("A Seren spirit appears", [0, 255, 255])],
+      }),
+    );
+    expect(a.check(ctx({ now: 1_005_000, idleMs: 1_000 })).triggered).toBe(true);
   });
 
   it("reports non-functional when configured with no match text", () => {

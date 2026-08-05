@@ -29,7 +29,8 @@ function alerter(over: Partial<AlerterBase> & { type: string }): AlerterBase {
 function deps(over: Partial<LoopDeps> = {}): LoopDeps {
   return {
     now: () => 0,
-    rsLastActive: () => 0,
+    idleMs: () => 0,
+    hasGameState: () => true,
     geometry: new GeometryWatch(host()),
     capture: () => ({}),
     chat: pool(),

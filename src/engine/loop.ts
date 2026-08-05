@@ -25,7 +25,9 @@ export type ActiveAlerter = {
 
 export type LoopDeps = {
   now: () => number;
-  rsLastActive: () => number;
+  /** Milliseconds since the last RS click. A duration, not a timestamp. */
+  idleMs: () => number;
+  hasGameState: () => boolean;
   geometry: GeometryWatch;
   /** Returns the single shared capture for this tick, or null when unavailable. */
   capture: () => unknown | null;
@@ -126,7 +128,8 @@ export class TickLoop {
     const ctx: AlerterContext = {
       tick: this.tick,
       now: this.deps.now(),
-      rsLastActive: this.deps.rsLastActive(),
+      idleMs: this.deps.idleMs(),
+      hasGameState: this.deps.hasGameState(),
       chatLines,
       geometry: this.deps.geometry.current,
     };

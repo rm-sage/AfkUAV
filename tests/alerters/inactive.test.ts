@@ -5,8 +5,10 @@ import type { AlerterContext } from "~/engine/types";
 function ctx(over: Partial<AlerterContext> = {}): AlerterContext {
   return {
     tick: 1,
-    now: 0,
-    rsLastActive: 0,
+    now: 1_700_000_000_000,
+    // Milliseconds SINCE the last click -- a duration, not a timestamp.
+    idleMs: 0,
+    hasGameState: true,
     chatLines: [],
     geometry: null,
     ...over,
@@ -23,33 +25,56 @@ describe("inactiveAlerter", () => {
     expect(() => inactiveAlerter.schema.parse({ delay: -5 })).toThrow();
   });
 
-  it("does not trigger before the delay", () => {
-    const a = inactiveAlerter.create({ delay: 10 });
-    const r = a.check(ctx({ now: 9_000, rsLastActive: 0 }));
+  // The regression: idleMs was previously treated as an epoch timestamp and
+  // subtracted from Date.now(), producing ~1.7e12 ms of "idle" on every tick, so
+  // the lobby timer sat permanently triggered and never counted down.
+  it("is not triggered immediately after a click", () => {
+    const a = inactiveAlerter.create({ delay: 570 });
+    const r = a.check(ctx({ idleMs: 0 }));
     expect(r.triggered).toBe(false);
-    expect(r.bar).toBeCloseTo(0.9);
+    expect(r.bar).toBe(0);
   });
 
-  it("triggers exactly at the delay", () => {
+  it("counts up proportionally toward the delay", () => {
     const a = inactiveAlerter.create({ delay: 10 });
-    expect(a.check(ctx({ now: 10_000, rsLastActive: 0 })).triggered).toBe(true);
+    expect(a.check(ctx({ idleMs: 2_500 })).bar).toBeCloseTo(0.25);
+    expect(a.check(ctx({ idleMs: 5_000 })).bar).toBeCloseTo(0.5);
+    expect(a.check(ctx({ idleMs: 9_000 })).bar).toBeCloseTo(0.9);
+  });
+
+  it("does not trigger before the delay", () => {
+    const a = inactiveAlerter.create({ delay: 10 });
+    expect(a.check(ctx({ idleMs: 9_999 })).triggered).toBe(false);
+  });
+
+  it("triggers at the delay", () => {
+    const a = inactiveAlerter.create({ delay: 10 });
+    expect(a.check(ctx({ idleMs: 10_000 })).triggered).toBe(true);
   });
 
   it("clamps the bar at 1 once well past the delay", () => {
     const a = inactiveAlerter.create({ delay: 10 });
-    const r = a.check(ctx({ now: 999_000, rsLastActive: 0 }));
+    const r = a.check(ctx({ idleMs: 999_000 }));
     expect(r.triggered).toBe(true);
     expect(r.bar).toBe(1);
   });
 
-  it("un-triggers when the player interacts again", () => {
+  it("un-triggers when the player clicks again", () => {
     const a = inactiveAlerter.create({ delay: 10 });
-    expect(a.check(ctx({ now: 20_000, rsLastActive: 0 })).triggered).toBe(true);
-    expect(a.check(ctx({ now: 20_000, rsLastActive: 19_000 })).triggered).toBe(false);
+    expect(a.check(ctx({ idleMs: 20_000 })).triggered).toBe(true);
+    expect(a.check(ctx({ idleMs: 0 })).triggered).toBe(false);
   });
 
-  it("is always functional -- it needs no reader", () => {
+  // rsLastActive needs the Gamestate permission. Without it the value is
+  // meaningless, and reporting "fine" would be a silent permanent failure.
+  it("reports non-functional without the gamestate permission", () => {
     const a = inactiveAlerter.create({ delay: 10 });
-    expect(a.check(ctx()).functional).toBe(true);
+    const r = a.check(ctx({ idleMs: 20_000, hasGameState: false }));
+    expect(r.functional).toBe(false);
+    expect(r.triggered).toBe(false);
+  });
+
+  it("is functional when gamestate is available", () => {
+    expect(inactiveAlerter.create({ delay: 10 }).check(ctx()).functional).toBe(true);
   });
 });

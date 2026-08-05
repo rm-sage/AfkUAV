@@ -64,10 +64,25 @@ export const liveHost: Alt1Host = {
   },
 };
 
-export function rsLastActive(): number {
-  if (!hasAlt1()) return Date.now();
+/**
+ * Milliseconds since the last click in the RS window.
+ *
+ * Alt1 documents `rsLastActive` as "the time in milliseconds SINCE the last click"
+ * -- a duration, despite a name that reads like a timestamp. Subtracting it from
+ * Date.now() yields ~1.7e12 ms of apparent idleness and pins every inactivity
+ * alert permanently on.
+ *
+ * Returns 0 (just clicked) when unavailable, so alerts stay quiet rather than
+ * screaming; `hasGameState()` is what surfaces the reason.
+ */
+export function idleMs(): number {
+  if (!hasAlt1()) return 0;
   const v = (alt1 as Record<string, unknown>).rsLastActive;
-  return typeof v === "number" ? v : Date.now();
+  return typeof v === "number" && Number.isFinite(v) ? v : 0;
+}
+
+export function hasGameState(): boolean {
+  return permissions().gameState;
 }
 
 /**

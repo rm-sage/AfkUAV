@@ -51,7 +51,7 @@ export const chatAlerter = defineAlerter<ChatVars>({
       .filter((t) => t.length > 0);
 
     let triggered = false;
-    let lastActive = -1;
+    let triggeredAt = 0;
 
     return {
       check(ctx: AlerterContext): TriggerState {
@@ -61,16 +61,20 @@ export const chatAlerter = defineAlerter<ChatVars>({
           return { triggered: false, bar: 0, functional: false };
         }
 
-        if (vars.resetonactive && triggered) {
-          if (lastActive !== -1 && ctx.rsLastActive > lastActive) triggered = false;
+        if (triggered && vars.resetonactive && ctx.hasGameState) {
+          // Both sides are "milliseconds since": idleMs since the last click, and
+          // (now - triggeredAt) since this alert fired. The smaller value is the
+          // more recent event, so a click that postdates the alert clears it.
+          // The 1s slack matches AfkWarden and absorbs tick granularity.
+          if (ctx.idleMs < ctx.now - triggeredAt + 1000) triggered = false;
         }
-        lastActive = ctx.rsLastActive;
 
         for (const line of ctx.chatLines) {
           if (!colorMatches(line, vars.colors)) continue;
           const hay = line.text.toLowerCase();
           if (needles.some((n) => hay.includes(n))) {
             triggered = true;
+            triggeredAt = ctx.now;
             break;
           }
         }

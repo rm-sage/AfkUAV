@@ -10,14 +10,17 @@ reliability defects that make the original intermittently unusable.
 
 ## Install
 
-In Alt1: **Add app** → paste
+Open this URL **inside the Alt1 browser** — an **Add App** button appears in the toolbar:
 
 ```
-https://rm-sage.github.io/AfkUAV/appconfig.json
+https://rm-sage.github.io/AfkUAV/
 ```
 
 Then open it, hit **Import from AfkWarden**, and paste a preset exported from AfkWarden's save-icon
 dialog (the whole `afkscape_presets` blob works too).
+
+Needs the *pixel*, *gamestate* and *overlay* permissions. Inactivity alerts depend on gamestate; an
+alert that cannot see what it needs shows a **no data** badge rather than failing quietly.
 
 ## Why
 

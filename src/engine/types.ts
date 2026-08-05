@@ -18,10 +18,19 @@ export type ChatLine = {
  */
 export interface AlerterContext {
   tick: number;
-  /** Milliseconds, injected rather than read from Date.now() so tests control time. */
+  /** Wall-clock ms, injected rather than read from Date.now() so tests control time. */
   now: number;
-  /** Timestamp of the last RS interaction, for inactivity-style alerters. */
-  rsLastActive: number;
+  /**
+   * Milliseconds SINCE the last click in the RS window -- a DURATION, not a
+   * timestamp. This mirrors `alt1.rsLastActive`, whose name reads like a timestamp
+   * and is not one; treating it as an epoch value makes every inactivity alert fire
+   * permanently. The name here says what the number actually is.
+   *
+   * Requires the Gamestate permission; see `hasGameState`.
+   */
+  idleMs: number;
+  /** False when the Gamestate permission is missing, which makes `idleMs` meaningless. */
+  hasGameState: boolean;
   /** Deduped union of new lines across every monitored chatbox this tick. */
   chatLines: readonly ChatLine[];
   geometry: RsGeometry | null;

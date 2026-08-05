@@ -23,11 +23,16 @@ export const inactiveAlerter = defineAlerter<InactiveVars>({
   create(vars) {
     return {
       check(ctx: AlerterContext): TriggerState {
-        const idleMs = ctx.now - ctx.rsLastActive;
+        // Without Gamestate, idleMs carries no information. Say so rather than
+        // reporting a confident "not idle" that would never fire.
+        if (!ctx.hasGameState) {
+          return { triggered: false, bar: 0, functional: false };
+        }
+
         const targetMs = vars.delay * 1000;
         return {
-          triggered: idleMs >= targetMs,
-          bar: clamp01(idleMs / targetMs),
+          triggered: ctx.idleMs >= targetMs,
+          bar: clamp01(ctx.idleMs / targetMs),
           functional: true,
         };
       },
