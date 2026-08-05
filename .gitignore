@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+coverage/
+
+# Personal AfkWarden config used for local import testing — not published.
+fixtures/personal/
+*.local.json
+
+.DS_Store
+Thumbs.db
+.env
+.env.*
+!.env.example
