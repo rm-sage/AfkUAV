@@ -4,6 +4,16 @@ import { clamp01, defineAlerter, type AlerterContext, type TriggerState } from "
 export const InactiveVars = z.object({
   /** Seconds of no RS interaction before triggering. AfkWarden's lobby default is 570. */
   delay: z.number().int().positive().default(570),
+  /**
+   * Also count mouse movement over the client as activity, not just clicks.
+   *
+   * RuneScape itself treats hovering as activity, so this makes the timer match
+   * what the game considers idle. It defaults OFF because the failure modes are
+   * asymmetric: counting clicks only can warn you early, which costs a wasted
+   * glance, while counting movement can warn you late, which costs the logout the
+   * alert existed to prevent.
+   */
+  countMouseMovement: z.boolean().default(false),
 });
 
 export type InactiveVars = z.infer<typeof InactiveVars>;
@@ -29,10 +39,15 @@ export const inactiveAlerter = defineAlerter<InactiveVars>({
           return { triggered: false, bar: 0, functional: false };
         }
 
+        // Whichever happened more recently defines how idle you actually are.
+        const idleMs = vars.countMouseMovement
+          ? Math.min(ctx.idleMs, ctx.mouseIdleMs)
+          : ctx.idleMs;
+
         const targetMs = vars.delay * 1000;
         return {
-          triggered: ctx.idleMs >= targetMs,
-          bar: clamp01(ctx.idleMs / targetMs),
+          triggered: idleMs >= targetMs,
+          bar: clamp01(idleMs / targetMs),
           functional: true,
         };
       },

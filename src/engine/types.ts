@@ -29,7 +29,15 @@ export interface AlerterContext {
    * Requires the Gamestate permission; see `hasGameState`.
    */
   idleMs: number;
-  /** False when the Gamestate permission is missing, which makes `idleMs` meaningless. */
+  /**
+   * Milliseconds since the in-game cursor last moved.
+   *
+   * RuneScape counts mouse movement over the client as activity, but Alt1's
+   * `rsLastActive` only measures clicks. Alerts that want to match what the game
+   * actually considers idle can combine the two.
+   */
+  mouseIdleMs: number;
+  /** False when the Gamestate permission is missing, which makes both idle values meaningless. */
   hasGameState: boolean;
   /** Deduped union of new lines across every monitored chatbox this tick. */
   chatLines: readonly ChatLine[];

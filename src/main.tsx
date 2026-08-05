@@ -8,9 +8,11 @@ import {
   liveHost,
   makeChatboxReader,
   mixColor,
+  mousePosition,
   rsFocused,
   setTooltip,
 } from "~/alt1-io/host";
+import { MouseActivityWatch } from "~/alt1-io/activity";
 import { AlarmScheduler } from "~/alerting/alarm";
 import { SoundPlayer } from "~/alerting/player";
 import { ChatboxPool } from "~/readers/chatbox-pool";
@@ -29,10 +31,12 @@ let settings: Settings = store.loadSettings();
 let activeName: string | null = store.loadActivePresetName() ?? presets[0]?.name ?? null;
 
 const chat = new ChatboxPool({ makeReader: makeChatboxReader, mixColor });
+const mouse = new MouseActivityWatch(mousePosition, () => Date.now());
 
 const loop = new TickLoop({
   now: () => Date.now(),
   idleMs,
+  mouseIdleMs: () => mouse.idleMs,
   hasGameState,
   geometry: new GeometryWatch(liveHost),
   capture: captureRs,
@@ -84,6 +88,8 @@ function dispatchAlerts(): void {
 }
 
 function tick(): void {
+  // Poll before stepping so alerters see this tick's movement, not last tick's.
+  mouse.poll();
   loop.step();
   dispatchAlerts();
 }

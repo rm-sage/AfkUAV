@@ -7,7 +7,7 @@ function line(text: string, color: RGB = [255, 255, 255]): ChatLine {
 }
 
 function ctx(over: Partial<AlerterContext> = {}): AlerterContext {
-  return { tick: 1, now: 1_000_000, idleMs: 999_999, hasGameState: true, chatLines: [], geometry: null, ...over };
+  return { tick: 1, now: 1_000_000, idleMs: 999_999, mouseIdleMs: 999_999, hasGameState: true, chatLines: [], geometry: null, ...over };
 }
 
 const serenVars = {

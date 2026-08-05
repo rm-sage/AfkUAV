@@ -27,6 +27,8 @@ export type LoopDeps = {
   now: () => number;
   /** Milliseconds since the last RS click. A duration, not a timestamp. */
   idleMs: () => number;
+  /** Milliseconds since the in-game cursor last moved. */
+  mouseIdleMs: () => number;
   hasGameState: () => boolean;
   geometry: GeometryWatch;
   /** Returns the single shared capture for this tick, or null when unavailable. */
@@ -129,6 +131,7 @@ export class TickLoop {
       tick: this.tick,
       now: this.deps.now(),
       idleMs: this.deps.idleMs(),
+      mouseIdleMs: this.deps.mouseIdleMs(),
       hasGameState: this.deps.hasGameState(),
       chatLines,
       geometry: this.deps.geometry.current,
