@@ -85,6 +85,25 @@ export function hasGameState(): boolean {
   return permissions().gameState;
 }
 
+/** Whether RuneScape is the active window, for the suppress-while-playing setting. */
+export function rsFocused(): boolean {
+  if (!hasAlt1()) return false;
+  return (alt1 as Record<string, unknown>).rsActive === true;
+}
+
+/**
+ * In-game cursor position, or null when the cursor is outside the RS client.
+ *
+ * Alt1 packs it as a single int (`x = r >> 16`, `y = r & 0xFFFF`) and uses -1 as
+ * the "not inside the client" sentinel. Requires Gamestate.
+ */
+export function mousePosition(): { x: number; y: number } | null {
+  if (!hasAlt1()) return null;
+  const v = (alt1 as Record<string, unknown>).mousePosition;
+  if (typeof v !== "number" || v === -1) return null;
+  return { x: v >> 16, y: v & 0xffff };
+}
+
 /**
  * One capture per tick, shared by every reader.
  *

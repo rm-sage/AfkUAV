@@ -8,8 +8,11 @@ import {
   liveHost,
   makeChatboxReader,
   mixColor,
+  rsFocused,
   setTooltip,
 } from "~/alt1-io/host";
+import { AlarmScheduler } from "~/alerting/alarm";
+import { SoundPlayer } from "~/alerting/player";
 import { ChatboxPool } from "~/readers/chatbox-pool";
 import { TICK_MS, TickLoop } from "~/engine/loop";
 import { Store } from "~/store/storage";
@@ -45,21 +48,36 @@ function applyPreset(): void {
   paint();
 }
 
-/** Alerts that were firing last tick, so each transition speaks exactly once. */
-const spoken = new Set<number>();
+const alarms = new AlarmScheduler();
+const player = new SoundPlayer();
+
+/** Alerts that were speaking last tick, so each transition speaks exactly once. */
+const spoken = new Set<string>();
 
 function dispatchAlerts(): void {
+  const focused = rsFocused();
+  const suppressed = settings.muted || (settings.activeSuppress && focused);
   const tooltips: string[] = [];
 
+  const sources = loop.alerters.map((a, i) => ({
+    key: `${i}:${a.config.name}`,
+    triggered: a.state.triggered,
+    alarm: a.config.alarm,
+    globalalarm: a.config.globalalarm,
+  }));
+
+  player.apply(alarms.update(sources, settings, focused));
+
   loop.alerters.forEach((a, i) => {
+    const key = `${i}:${a.config.name}`;
     if (!a.state.triggered) {
-      spoken.delete(i);
+      spoken.delete(key);
       return;
     }
     if (a.config.tooltip !== null && a.config.tooltip.length > 0) tooltips.push(a.config.tooltip);
-    if (spoken.has(i)) return;
-    spoken.add(i);
-    if (a.config.voice !== null && !settings.muted) speak(a.config.voice, settings.volume);
+    if (spoken.has(key)) return;
+    spoken.add(key);
+    if (a.config.voice !== null && !suppressed) speak(a.config.voice, settings.volume);
   });
 
   setTooltip(tooltips.join(" · "));

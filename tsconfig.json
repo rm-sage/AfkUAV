@@ -1,7 +1,10 @@
 {
   "compilerOptions": {
-    "target": "ES2021",
-    "lib": ["ES2021", "DOM", "DOM.Iterable"],
+    // ES2022 is the highest level Chromium 108 fully supports. Keeping lib pinned
+    // here is a guard: ES2023 additions like Array.prototype.toSorted would
+    // typecheck but break inside Alt1.
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
