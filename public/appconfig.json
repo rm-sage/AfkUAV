@@ -1,0 +1,14 @@
+{
+  "appName": "AfkUAV",
+  "description": "AFK alerting for RuneScape 3. Modern replacement for AfkWarden, with every open chatbox monitored and readers that re-anchor themselves when the game window changes.",
+  "appUrl": "./index.html",
+  "configUrl": "./appconfig.json",
+  "iconUrl": "./icon.png",
+  "defaultWidth": 280,
+  "defaultHeight": 420,
+  "minWidth": 200,
+  "minHeight": 120,
+  "maxWidth": 900,
+  "maxHeight": 900,
+  "permissions": "pixel,gamestate,overlay"
+}
