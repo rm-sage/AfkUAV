@@ -13,7 +13,7 @@ import {
   setTooltip,
 } from "~/alt1-io/host";
 import { MouseActivityWatch } from "~/alt1-io/activity";
-import { actionbarReader } from "~/alt1-io/readers";
+import { actionbarReader, buffReader } from "~/alt1-io/readers";
 import { TickReaders } from "~/readers/bundle";
 import { AlarmScheduler } from "~/alerting/alarm";
 import { SoundPlayer } from "~/alerting/player";
@@ -34,7 +34,11 @@ let activeName: string | null = store.loadActivePresetName() ?? presets[0]?.name
 
 const chat = new ChatboxPool({ makeReader: makeChatboxReader, mixColor });
 const mouse = new MouseActivityWatch(mousePosition, () => Date.now());
-const readers = new TickReaders({ actionbar: actionbarReader() });
+const readers = new TickReaders({
+  actionbar: actionbarReader(),
+  buffs: buffReader(false),
+  debuffs: buffReader(true),
+});
 
 const loop = new TickLoop({
   now: () => Date.now(),

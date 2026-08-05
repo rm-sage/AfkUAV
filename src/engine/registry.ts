@@ -2,6 +2,7 @@ import type { AlerterModule } from "~/engine/types";
 import { inactiveAlerter } from "~/alerters/inactive";
 import { chatAlerter } from "~/alerters/chat";
 import { actionbarAlerter } from "~/alerters/actionbar";
+import { buffsAlerter } from "~/alerters/buffs";
 
 /**
  * Alerter modules that are implemented and wired up.
@@ -15,6 +16,7 @@ const MODULES: ReadonlyArray<AlerterModule<never>> = [
   inactiveAlerter as unknown as AlerterModule<never>,
   chatAlerter as unknown as AlerterModule<never>,
   actionbarAlerter as unknown as AlerterModule<never>,
+  buffsAlerter as unknown as AlerterModule<never>,
 ];
 
 const BY_TYPE = new Map<string, AlerterModule<never>>(MODULES.map((m) => [m.type, m]));

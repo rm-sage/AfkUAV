@@ -62,10 +62,15 @@ settings, and quick-add premades.
 | --- | --- |
 | `inactive` | ✅ |
 | `chat` | ✅ |
-| `xpcounter`, `bigxp`, `craftmenu`, `drops`, `buffs`, `actionbar`, `sheathe`, `castlewars`, `dialogtextsimple`, `fightkiln`, `targetdeath`, `summoning`, `clockbased`, `necroritual` | not yet |
+| `actionbar` | ✅ |
+| `buffs` | ✅ |
+| `xpcounter`, `bigxp`, `craftmenu`, `drops`, `sheathe`, `castlewars`, `dialogtextsimple`, `fightkiln`, `targetdeath`, `summoning`, `clockbased`, `necroritual` | not yet |
 
-`inactive` and `chat` were built first because they cover 87 of the 108 alerts in the config this
-was developed against — chat alone is 67%.
+Ordered by how much they actually get used: the four above cover 102 of the 108 alerts in the config
+this was developed against. Chat alone is 67%.
+
+Alerts of a type that isn't implemented yet still import — they show an error badge rather than
+disappearing.
 
 Existing AfkWarden presets import directly.
 
