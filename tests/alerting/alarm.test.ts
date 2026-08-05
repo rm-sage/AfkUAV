@@ -119,15 +119,23 @@ describe("AlarmScheduler", () => {
     expect(s.update([], settings())).toEqual([{ kind: "stop", key: "a" }]);
   });
 
-  it("suppresses alarms while RS is focused when activeSuppress is on", () => {
+  // The caller computes this via shouldSuppress, which already accounts for the
+  // activeSuppress setting; the scheduler takes it at face value.
+  it("emits nothing while activity suppression is in effect", () => {
     const s = new AlarmScheduler();
-    const cmds = s.update([src({ triggered: true })], settings({ activeSuppress: true }), true);
-    expect(cmds).toEqual([]);
+    expect(s.update([src({ triggered: true })], settings(), true)).toEqual([]);
   });
 
-  it("still alarms when RS is not focused under activeSuppress", () => {
+  it("alarms normally when activity suppression is not in effect", () => {
     const s = new AlarmScheduler();
-    const cmds = s.update([src({ triggered: true })], settings({ activeSuppress: true }), false);
-    expect(cmds).toHaveLength(1);
+    expect(s.update([src({ triggered: true })], settings(), false)).toHaveLength(1);
+  });
+
+  it("stops a sounding alarm when suppression kicks in mid-alert", () => {
+    const s = new AlarmScheduler();
+    s.update([src({ triggered: true })], settings(), false);
+    expect(s.update([src({ triggered: true })], settings(), true)).toEqual([
+      { kind: "stop", key: "a" },
+    ]);
   });
 });

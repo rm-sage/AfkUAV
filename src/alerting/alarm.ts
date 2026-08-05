@@ -37,17 +37,17 @@ export class AlarmScheduler {
   #sounding = new Set<string>();
 
   /**
-   * @param rsFocused whether RuneScape is the active window; only consulted when
-   *   the `activeSuppress` setting is on, so alerts stay quiet while you are
-   *   actually playing.
+   * @param activitySuppressed whether recent play should keep alarms quiet.
+   *   Computed by `shouldSuppress`, which already accounts for the
+   *   `activeSuppress` setting, so it is used as-is rather than re-tested here.
    */
   update(
     sources: readonly AlarmSource[],
     settings: Settings,
-    rsFocused = false,
+    activitySuppressed = false,
   ): AlarmCommand[] {
     const commands: AlarmCommand[] = [];
-    const suppressed = settings.muted || (settings.activeSuppress && rsFocused);
+    const suppressed = settings.muted || activitySuppressed;
     const seen = new Set<string>();
 
     for (const source of sources) {

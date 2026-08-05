@@ -155,6 +155,25 @@ export function highlightBox(
   overLayText?.(label, mixColor(255, 255, 255), 12, rect.x + 4, rect.y + 14, ms);
 }
 
+/**
+ * Draws a progress bar over the RuneScape taskbar icon, or null when unavailable.
+ *
+ * Returned as a function rather than called directly so the consumer can hold a
+ * stable reference and stay testable.
+ */
+export function taskbarSetter(): ((type: number, progress: number) => void) | null {
+  if (!hasAlt1()) return null;
+  const fn = (alt1 as Record<string, unknown>).setTaskbarProgress;
+  if (typeof fn !== "function") return null;
+  return (type: number, progress: number) => {
+    try {
+      (fn as (t: number, p: number) => void)(type, progress);
+    } catch {
+      /* Host rejected the call; nothing useful to do per-tick. */
+    }
+  };
+}
+
 export function setTooltip(text: string): void {
   if (!hasAlt1()) return;
   const a = alt1 as Record<string, unknown>;

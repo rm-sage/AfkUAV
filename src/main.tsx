@@ -11,12 +11,14 @@ import {
   mousePosition,
   rsFocused,
   setTooltip,
+  taskbarSetter,
 } from "~/alt1-io/host";
 import { MouseActivityWatch } from "~/alt1-io/activity";
 import { actionbarReader, buffReader, xpReader } from "~/alt1-io/readers";
 import { TickReaders } from "~/readers/bundle";
 import { AlarmScheduler } from "~/alerting/alarm";
 import { SoundPlayer } from "~/alerting/player";
+import { TaskbarBar, shouldSuppress, taskbarState } from "~/alerting/taskbar";
 import { ChatboxPool } from "~/readers/chatbox-pool";
 import { TICK_MS, TickLoop } from "~/engine/loop";
 import { Store } from "~/store/storage";
@@ -63,13 +65,23 @@ function applyPreset(): void {
 
 const alarms = new AlarmScheduler();
 const player = new SoundPlayer();
+const taskbar = new TaskbarBar(taskbarSetter());
+
+// Leave the RuneScape taskbar icon undecorated when the app closes.
+globalThis.addEventListener("beforeunload", () => {
+  taskbar.clear();
+  player.stopAll();
+});
 
 /** Alerts that were speaking last tick, so each transition speaks exactly once. */
 const spoken = new Set<string>();
 
 function dispatchAlerts(): void {
   const focused = rsFocused();
-  const suppressed = settings.muted || (settings.activeSuppress && focused);
+  // Suppression keys off how recently you clicked, not focus: alt-tabbing to read
+  // something is not the same as having stopped playing.
+  const quiet = shouldSuppress(settings.activeSuppress, idleMs(), focused);
+  const suppressed = settings.muted || quiet;
   const tooltips: string[] = [];
 
   const sources = loop.alerters.map((a, i) => ({
@@ -79,7 +91,20 @@ function dispatchAlerts(): void {
     globalalarm: a.config.globalalarm,
   }));
 
-  player.apply(alarms.update(sources, settings, focused));
+  // `quiet` is passed as the suppression flag the scheduler already understands.
+  player.apply(alarms.update(sources, settings, quiet));
+
+  taskbar.apply(
+    taskbarState(
+      loop.alerters.map((a) => ({
+        paused: a.config.paused,
+        triggered: a.state.triggered,
+        bar: a.state.bar,
+        exportbar: a.config.exportbar,
+      })),
+      settings.showTaskbarOverlay,
+    ),
+  );
 
   loop.alerters.forEach((a, i) => {
     const key = `${i}:${a.config.name}`;
