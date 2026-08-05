@@ -1,7 +1,13 @@
 import * as a1lib from "alt1/base";
-import ChatBoxReader from "alt1/chatbox";
+import * as chatboxModule from "alt1/chatbox";
 import type { Alt1Host } from "~/alt1-io/geometry";
 import type { ChatboxLike } from "~/readers/chatbox-pool";
+import { interopDefault } from "~/alt1-io/interop";
+
+type ChatBoxReaderCtor = new () => ChatboxLike;
+
+/** alt1 ships webpack UMD bundles; the class sits under nested `.default`. */
+const ChatBoxReader = interopDefault<ChatBoxReaderCtor>(chatboxModule);
 
 /**
  * The only module permitted to touch the `alt1` global or the alt1 package.
@@ -80,7 +86,7 @@ export function captureRs(): unknown | null {
 }
 
 export function makeChatboxReader(): ChatboxLike {
-  return new ChatBoxReader() as unknown as ChatboxLike;
+  return new ChatBoxReader();
 }
 
 export function mixColor(r: number, g: number, b: number): number {
