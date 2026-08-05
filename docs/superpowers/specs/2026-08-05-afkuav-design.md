@@ -89,7 +89,7 @@ The misspelling `treshold` is preserved in the **import mapper only**; the inter
 
 ### 2.3 The config being migrated
 
-15 presets, 110 alerters. Extracted from Alt1's CEF LevelDB and preserved at
+15 presets, 108 alerters. Extracted from Alt1's CEF LevelDB and preserved at
 `RS3\AfkWarden-backup-2026-08-05\`.
 
 Distribution by type: **chat 74**, inactive 13, actionbar 8, buffs 7, xpcounter 4, craftmenu 1,
