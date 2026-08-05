@@ -1,5 +1,6 @@
 import * as abilityModule from "alt1/ability";
 import * as buffsModule from "alt1/buffs";
+import * as xpModule from "alt1/xpcounter";
 import { interopDefault, interopNamed } from "~/alt1-io/interop";
 import { AnchoredReader, type ReaderLike } from "~/readers/anchored-reader";
 import type { ActionbarState, BuffSlot } from "~/readers/bundle";
@@ -138,5 +139,55 @@ export function buffReader(debuffs: boolean): AnchoredReader<unknown, BuffSlot[]
     make: () => makeBuffReader(debuffs),
     // An empty buff bar is a legitimate reading, not evidence of a bad position.
     isEmpty: () => false,
+  });
+}
+
+type Alt1XpReader = {
+  pos: unknown;
+  skills: string[];
+  values: number[];
+  findAsync(cb?: unknown, img?: unknown): void;
+  read(img?: unknown): unknown;
+};
+
+type XpReaderCtor = new () => Alt1XpReader;
+
+export function makeXpReader(): ReaderLike<unknown, ReadonlyMap<string, number>> {
+  const Ctor = interopDefault<XpReaderCtor>(xpModule);
+  if (typeof Ctor !== "function") {
+    throw new Error("alt1/xpcounter did not export XpcounterReader");
+  }
+  const inner = new Ctor();
+
+  return {
+    get pos() {
+      return inner.pos ?? null;
+    },
+    set pos(value: unknown) {
+      inner.pos = value;
+    },
+    find(img: unknown) {
+      // Unlike every other reader this one searches asynchronously, so the
+      // position appears on a later tick. Returning null now simply means the
+      // anchor tries again, which is exactly the behaviour we want.
+      inner.findAsync(undefined, img);
+      return inner.pos ?? null;
+    },
+    read(img: unknown) {
+      inner.read(img);
+      const out = new Map<string, number>();
+      for (const [i, skill] of inner.skills.entries()) {
+        const value = inner.values[i];
+        if (typeof value === "number" && value >= 0) out.set(skill, value);
+      }
+      return out;
+    },
+  };
+}
+
+export function xpReader(): AnchoredReader<unknown, ReadonlyMap<string, number>> {
+  return new AnchoredReader<unknown, ReadonlyMap<string, number>>({
+    make: makeXpReader,
+    isEmpty: (out) => out.size === 0,
   });
 }

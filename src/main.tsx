@@ -13,7 +13,7 @@ import {
   setTooltip,
 } from "~/alt1-io/host";
 import { MouseActivityWatch } from "~/alt1-io/activity";
-import { actionbarReader, buffReader } from "~/alt1-io/readers";
+import { actionbarReader, buffReader, xpReader } from "~/alt1-io/readers";
 import { TickReaders } from "~/readers/bundle";
 import { AlarmScheduler } from "~/alerting/alarm";
 import { SoundPlayer } from "~/alerting/player";
@@ -38,6 +38,7 @@ const readers = new TickReaders({
   actionbar: actionbarReader(),
   buffs: buffReader(false),
   debuffs: buffReader(true),
+  xp: xpReader(),
 });
 
 const loop = new TickLoop({

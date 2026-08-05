@@ -64,9 +64,11 @@ settings, and quick-add premades.
 | `chat` | ✅ |
 | `actionbar` | ✅ |
 | `buffs` | ✅ |
-| `xpcounter`, `bigxp`, `craftmenu`, `drops`, `sheathe`, `castlewars`, `dialogtextsimple`, `fightkiln`, `targetdeath`, `summoning`, `clockbased`, `necroritual` | not yet |
+| `xpcounter` | ✅ |
+| `bigxp` | ✅ |
+| `craftmenu`, `drops`, `sheathe`, `castlewars`, `dialogtextsimple`, `fightkiln`, `targetdeath`, `summoning`, `clockbased`, `necroritual` | not yet |
 
-Ordered by how much they actually get used: the four above cover 102 of the 108 alerts in the config
+Ordered by how much they actually get used: the six above cover 106 of the 108 alerts in the config
 this was developed against. Chat alone is 67%.
 
 Alerts of a type that isn't implemented yet still import — they show an error badge rather than
