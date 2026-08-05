@@ -4,9 +4,10 @@ A modern replacement for the RuneScape 3 [Alt1 Toolkit](https://runeapps.org/alt
 **AfkWarden** — full feature parity, rebuilt UI, multi-chatbox monitoring, and fixes for two
 reliability defects that make the original intermittently unusable.
 
-> **Status:** early. The runtime works and installs — inactivity and chat alerts fire, and
-> AfkWarden presets import. 14 of the 16 alerter types are not implemented yet; importing a preset
-> that uses one keeps the alert and flags it rather than dropping it silently.
+> **Status:** usable. Installs, imports AfkWarden presets, and 6 of the 16 alerter types are live —
+> covering 106 of the 108 alerts in the reference config. Sound and text-to-speech alerts work.
+> Importing a preset that uses one of the remaining 10 types keeps the alert and flags it rather
+> than dropping it silently. No preset editor yet, so alerts are imported rather than authored.
 
 ## Install
 
