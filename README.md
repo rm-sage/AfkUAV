@@ -4,7 +4,20 @@ A modern replacement for the RuneScape 3 [Alt1 Toolkit](https://runeapps.org/alt
 **AfkWarden** — full feature parity, rebuilt UI, multi-chatbox monitoring, and fixes for two
 reliability defects that make the original intermittently unusable.
 
-> **Status:** design complete, implementation starting. Not yet installable.
+> **Status:** early. The runtime works and installs — inactivity and chat alerts fire, and
+> AfkWarden presets import. 14 of the 16 alerter types are not implemented yet; importing a preset
+> that uses one keeps the alert and flags it rather than dropping it silently.
+
+## Install
+
+In Alt1: **Add app** → paste
+
+```
+https://rm-sage.github.io/AfkUAV/appconfig.json
+```
+
+Then open it, hit **Import from AfkWarden**, and paste a preset exported from AfkWarden's save-icon
+dialog (the whole `afkscape_presets` blob works too).
 
 ## Why
 
@@ -39,10 +52,17 @@ for the full analysis.
 
 ## Feature parity
 
-All 16 shipping AfkWarden alerter types: `inactive`, `xpcounter`, `bigxp`, `chat`, `craftmenu`,
-`drops`, `buffs`, `actionbar`, `sheathe`, `castlewars`, `dialogtextsimple`, `fightkiln`,
-`targetdeath`, `summoning`, `clockbased`, `necroritual` — plus preset management, per-alert pause,
-global settings, and quick-add premades.
+Target is all 16 shipping AfkWarden alerter types — plus preset management, per-alert pause, global
+settings, and quick-add premades.
+
+| Type | Status |
+| --- | --- |
+| `inactive` | ✅ |
+| `chat` | ✅ |
+| `xpcounter`, `bigxp`, `craftmenu`, `drops`, `buffs`, `actionbar`, `sheathe`, `castlewars`, `dialogtextsimple`, `fightkiln`, `targetdeath`, `summoning`, `clockbased`, `necroritual` | not yet |
+
+`inactive` and `chat` were built first because they cover 87 of the 108 alerts in the config this
+was developed against — chat alone is 67%.
 
 Existing AfkWarden presets import directly.
 
