@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { clamp01, defineAlerter, type AlerterContext, type TriggerState } from "~/engine/types";
+import { SKILL_OPTIONS } from "~/engine/fields";
 
 /**
  * AfkWarden is inconsistent about the "total" skill code: its dropdown stores
@@ -40,6 +41,17 @@ export const xpCounterAlerter = defineAlerter<XpCounterVars>({
   typename: "XP counter inactivity",
   descr: "Triggers when you have not gained XP in a skill for a set time.",
   schema: XpCounterVars,
+  fields: [
+    { key: "skill", kind: "select", label: "Skill", options: SKILL_OPTIONS },
+    { key: "delay", kind: "number", label: "Alert after", min: 1, suffix: "sec without XP" },
+    {
+      key: "threshold",
+      kind: "number",
+      label: "Minimum XP drop",
+      min: 0,
+      help: "Gains smaller than this do not count as activity.",
+    },
+  ],
   create(vars) {
     let lastXp = 0;
     let lastChangeAt = 0;
@@ -96,6 +108,10 @@ export const bigXpAlerter = defineAlerter<BigXpVars>({
   typename: "Big XP drops",
   descr: "Triggers after gaining a large XP drop in one go.",
   schema: BigXpVars,
+  fields: [
+    { key: "skill", kind: "select", label: "Skill", options: SKILL_OPTIONS },
+    { key: "threshold", kind: "number", label: "Minimum XP drop", min: 0 },
+  ],
   create(vars) {
     let lastXp = 0;
     let seeded = false;

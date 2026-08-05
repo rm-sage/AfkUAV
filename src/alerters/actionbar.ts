@@ -28,6 +28,29 @@ export const actionbarAlerter = defineAlerter<ActionbarVars>({
   descr:
     "Triggers when your life points, prayer, summoning or adrenaline pass a threshold.",
   schema: ActionbarVars,
+  fields: [
+    {
+      key: "stat",
+      kind: "select",
+      label: "Resource",
+      options: [
+        { value: "hp", label: "Life points" },
+        { value: "pray", label: "Prayer" },
+        { value: "sum", label: "Summoning" },
+        { value: "dren", label: "Adrenaline" },
+      ],
+    },
+    {
+      key: "higherlower",
+      kind: "select",
+      label: "Trigger when",
+      options: [
+        { value: "lower", label: "At or below" },
+        { value: "higher", label: "At or above" },
+      ],
+    },
+    { key: "threshold", kind: "number", label: "Threshold", min: 0, max: 100, suffix: "%" },
+  ],
   create(vars) {
     return {
       check(ctx: AlerterContext): TriggerState {

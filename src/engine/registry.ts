@@ -32,6 +32,11 @@ export function implementedTypes(): string[] {
   return [...BY_TYPE.keys()];
 }
 
+/** Modules the editor can offer, in registration order. */
+export function implementedModules(): ReadonlyArray<AlerterModule<never>> {
+  return MODULES;
+}
+
 export function isImplemented(type: string): boolean {
   return BY_TYPE.has(type);
 }

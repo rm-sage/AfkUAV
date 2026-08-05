@@ -22,9 +22,9 @@ import { TaskbarBar, shouldSuppress, taskbarState } from "~/alerting/taskbar";
 import { ChatboxPool } from "~/readers/chatbox-pool";
 import { TICK_MS, TickLoop } from "~/engine/loop";
 import { Store } from "~/store/storage";
-import type { Preset, Settings } from "~/store/schema";
+import { PresetSchema, type AlerterBase, type Preset, type Settings } from "~/store/schema";
 import { speak } from "~/alerting/speech";
-import { App } from "~/ui/App";
+import { App, type PresetAction } from "~/ui/App";
 import "~/ui/styles.css";
 
 identify();
@@ -161,16 +161,79 @@ function paint(): void {
         paint();
       }}
       onTogglePause={(index) => {
-        const a = loop.alerters[index];
-        if (a === undefined) return;
-        a.config.paused = !a.config.paused;
-        const preset = activePreset();
-        if (preset !== null) store.savePresets(presets);
-        paint();
+        mutateAlerts((alerts) => {
+          const a = alerts[index];
+          if (a !== undefined) a.paused = !a.paused;
+        });
       }}
+      onSaveAlert={(index, next) => {
+        mutateAlerts((alerts) => {
+          if (index === null) alerts.push(next);
+          else alerts[index] = next;
+        });
+      }}
+      onDeleteAlert={(index) => {
+        mutateAlerts((alerts) => {
+          alerts.splice(index, 1);
+        });
+      }}
+      onPresetAction={handlePresetAction}
     />,
     root,
   );
+}
+
+/** Edit the active preset's alerts in place, then persist and rebuild the runtime. */
+function mutateAlerts(fn: (alerts: AlerterBase[]) => void): void {
+  const preset = activePreset();
+  if (preset === null) return;
+  fn(preset.alerters);
+  // Groups are derived from the alerts, so recompute rather than letting the two
+  // drift apart.
+  preset.groups = [...new Set(preset.alerters.map((a) => a.group).filter((g): g is string => g !== null))];
+  store.savePresets(presets);
+  applyPreset();
+}
+
+function uniqueName(base: string): string {
+  if (!presets.some((p) => p.name === base)) return base;
+  for (let n = 2; ; n++) {
+    const candidate = `${base} ${n}`;
+    if (!presets.some((p) => p.name === candidate)) return candidate;
+  }
+}
+
+function handlePresetAction(action: PresetAction): void {
+  const current = activePreset();
+
+  if (action.kind === "new") {
+    const preset = PresetSchema.parse({ name: uniqueName(action.name), alerters: [] });
+    presets = [...presets, preset];
+    activeName = preset.name;
+  } else if (action.kind === "duplicate") {
+    if (current === null) return;
+    const copy = PresetSchema.parse({
+      ...structuredClone(current),
+      name: uniqueName(action.name),
+    });
+    presets = [...presets, copy];
+    activeName = copy.name;
+  } else if (action.kind === "rename") {
+    if (current === null) return;
+    const name = uniqueName(action.name);
+    // Renaming in place keeps position in the list, which is where the user
+    // expects to find it afterwards.
+    current.name = name;
+    activeName = name;
+  } else {
+    if (current === null) return;
+    presets = presets.filter((p) => p !== current);
+    activeName = presets[0]?.name ?? null;
+  }
+
+  store.savePresets(presets);
+  store.saveActivePresetName(activeName);
+  applyPreset();
 }
 
 applyPreset();

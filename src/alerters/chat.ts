@@ -45,6 +45,21 @@ export const chatAlerter = defineAlerter<ChatVars>({
   typename: "Chatbox",
   descr: "Triggers when a chat message matching your text appears in any monitored chatbox.",
   schema: ChatVars,
+  fields: [
+    {
+      key: "lines",
+      kind: "lines",
+      label: "Text that triggers this alert",
+      help: "Matched as a case-insensitive substring, so a fragment of a longer message works.",
+    },
+    {
+      key: "colors",
+      kind: "colors",
+      label: "Text colours to accept",
+      help: "Leave empty to accept any colour.",
+    },
+    { key: "resetonactive", kind: "boolean", label: "Reset after clicking RuneScape" },
+  ],
   create(vars) {
     const needles = vars.lines
       .map((l) => l.text.toLowerCase())

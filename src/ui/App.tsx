@@ -1,8 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 import type { ActiveAlerter, TickLoop } from "~/engine/loop";
-import type { Preset, Settings } from "~/store/schema";
+import type { AlerterBase, Preset, Settings } from "~/store/schema";
 import { importAfkWardenJson, type ImportIssue } from "~/import/afkwarden";
+import { toAfkWardenPreset } from "~/import/export";
 import type { AnchorHealth } from "~/readers/anchor";
+import { AlertEditor } from "~/ui/AlertEditor";
+import { SettingsDialog } from "~/ui/SettingsDialog";
+
+export type PresetAction =
+  | { kind: "new"; name: string }
+  | { kind: "rename"; name: string }
+  | { kind: "duplicate"; name: string }
+  | { kind: "delete" };
 
 export type AppProps = {
   loop: TickLoop;
@@ -13,6 +22,10 @@ export type AppProps = {
   onImport(presets: Preset[]): void;
   onSettings(next: Settings): void;
   onTogglePause(index: number): void;
+  /** index null means "append a new alert". */
+  onSaveAlert(index: number | null, alert: AlerterBase): void;
+  onDeleteAlert(index: number): void;
+  onPresetAction(action: PresetAction): void;
 };
 
 /** Re-render on a timer rather than pushing from the loop: simpler, and 5fps is plenty. */
@@ -35,8 +48,8 @@ function HealthPill({ health, boxes }: { health: AnchorHealth; boxes: number }) 
   const title =
     health.state === "ok"
       ? `Monitoring ${boxes} chatbox${boxes === 1 ? "" : "es"}.` +
-        (health.lastInvalidation ? ` Last re-anchored: ${health.lastInvalidation}.` : "")
-      : "Looking for a chatbox. Open one in game if alerts are not firing.";
+        (health.lastInvalidation !== null ? ` Last re-anchored: ${health.lastInvalidation}.` : "")
+      : "Looking for a chatbox. Open one in game if chat alerts are not firing.";
 
   return (
     <span class={`health health--${health.state}`} title={title}>
@@ -46,7 +59,15 @@ function HealthPill({ health, boxes }: { health: AnchorHealth; boxes: number }) 
   );
 }
 
-function Row({ a, onTogglePause }: { a: ActiveAlerter; onTogglePause(): void }) {
+function Row({
+  a,
+  onTogglePause,
+  onEdit,
+}: {
+  a: ActiveAlerter;
+  onTogglePause(): void;
+  onEdit(): void;
+}) {
   const cls = [
     "row",
     a.state.triggered ? "row--fired" : "",
@@ -67,6 +88,9 @@ function Row({ a, onTogglePause }: { a: ActiveAlerter; onTogglePause(): void }) 
             no data
           </span>
         ) : null}
+        <button class="iconbtn" onClick={onEdit} title="Edit" aria-label="Edit">
+          ✎
+        </button>
         <button
           class="iconbtn"
           onClick={onTogglePause}
@@ -117,9 +141,9 @@ function ImportDialog({
   return (
     <dialog ref={ref} onCancel={onClose}>
       <h2>Import from AfkWarden</h2>
-      <p style={{ margin: "0 0 8px", fontSize: 12, color: "var(--text-dim)" }}>
-        In AfkWarden, open the save icon, choose a preset and press Export, then paste it
-        here. The whole <code>afkscape_presets</code> blob works too.
+      <p class="fld__help">
+        In AfkWarden, open the save icon, choose a preset and press Export, then paste it here. The
+        whole <code>afkscape_presets</code> blob works too.
       </p>
       <textarea
         value={text}
@@ -147,11 +171,58 @@ function ImportDialog({
   );
 }
 
+function ExportDialog({
+  preset,
+  onClose,
+}: {
+  preset: Preset | null;
+  onClose(): void;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const d = ref.current;
+    if (d === null) return;
+    if (preset !== null && !d.open) d.showModal();
+    if (preset === null && d.open) d.close();
+  }, [preset]);
+
+  const json = preset === null ? "" : JSON.stringify(toAfkWardenPreset(preset));
+
+  return (
+    <dialog ref={ref} onCancel={onClose}>
+      <h2>Export “{preset?.name ?? ""}”</h2>
+      <p class="fld__help">
+        AfkWarden-compatible, so this pastes straight back into the original if you ever want it
+        there.
+      </p>
+      <textarea readOnly value={json} onFocus={(e) => (e.target as HTMLTextAreaElement).select()} />
+      <div class="dlg__actions">
+        <button
+          class="btn btn--ghost"
+          onClick={() => {
+            void navigator.clipboard?.writeText(json);
+          }}
+        >
+          Copy
+        </button>
+        <button class="btn" onClick={onClose}>
+          Done
+        </button>
+      </div>
+    </dialog>
+  );
+}
+
 export function App(props: AppProps) {
   useRepaint();
   const [importOpen, setImportOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [exporting, setExporting] = useState<Preset | null>(null);
+  const [editing, setEditing] = useState<{ index: number | null } | null>(null);
 
   const { loop, presets, activePreset, settings } = props;
+  const preset = presets.find((p) => p.name === activePreset) ?? null;
 
   // Preserve configured order while collecting rows under their group heading.
   const sections = useMemo(() => {
@@ -165,7 +236,27 @@ export function App(props: AppProps) {
     return out;
   }, [loop.alerters, loop.alerters.length]);
 
+  const groups = useMemo(
+    () => [...new Set(loop.alerters.map((a) => a.config.group).filter((g): g is string => g !== null))],
+    [loop.alerters],
+  );
+
   const anyAlerters = loop.alerters.length > 0;
+  const editingAlert =
+    editing === null || editing.index === null
+      ? null
+      : (loop.alerters[editing.index]?.config ?? null);
+
+  const promptPreset = (kind: "new" | "rename" | "duplicate"): void => {
+    const suggestion =
+      kind === "new" ? "New preset" : kind === "duplicate" ? `${preset?.name ?? ""} copy` : preset?.name ?? "";
+    const name = globalThis.prompt(
+      kind === "rename" ? "Rename preset to" : "Preset name",
+      suggestion,
+    );
+    if (name === null || name.trim().length === 0) return;
+    props.onPresetAction({ kind, name: name.trim() });
+  };
 
   return (
     <>
@@ -183,36 +274,102 @@ export function App(props: AppProps) {
             </option>
           ))}
         </select>
-        <HealthPill health={props.loop.chatHealth} boxes={props.loop.chatBoxCount} />
+        <HealthPill health={loop.chatHealth} boxes={loop.chatBoxCount} />
       </header>
+
+      <div class="subhdr">
+        <button class="iconbtn" title="New preset" onClick={() => promptPreset("new")}>
+          ＋
+        </button>
+        <button
+          class="iconbtn"
+          title="Rename preset"
+          disabled={preset === null}
+          onClick={() => promptPreset("rename")}
+        >
+          ✎
+        </button>
+        <button
+          class="iconbtn"
+          title="Duplicate preset"
+          disabled={preset === null}
+          onClick={() => promptPreset("duplicate")}
+        >
+          ⧉
+        </button>
+        <button
+          class="iconbtn"
+          title="Export preset"
+          disabled={preset === null}
+          onClick={() => setExporting(preset)}
+        >
+          ⭱
+        </button>
+        <button class="iconbtn" title="Import from AfkWarden" onClick={() => setImportOpen(true)}>
+          ⭳
+        </button>
+        <button
+          class="iconbtn iconbtn--danger"
+          title="Delete preset"
+          disabled={preset === null}
+          onClick={() => {
+            if (preset === null) return;
+            if (globalThis.confirm(`Delete preset “${preset.name}”?`)) {
+              props.onPresetAction({ kind: "delete" });
+            }
+          }}
+        >
+          🗑
+        </button>
+        <span class="ftr__spacer" />
+        <button
+          class="btn btn--sm"
+          disabled={preset === null}
+          onClick={() => setEditing({ index: null })}
+        >
+          + Alert
+        </button>
+      </div>
 
       <main class="list">
         {anyAlerters ? (
           sections.map((s, n) => (
             <>
-              {s.group !== null ? <div class="group" key={`g${n}`}>{s.group}</div> : null}
+              {s.group !== null ? (
+                <div class="group" key={`g${n}`}>
+                  {s.group}
+                </div>
+              ) : null}
               {s.items.map(({ a, i }) => (
-                <Row key={i} a={a} onTogglePause={() => props.onTogglePause(i)} />
+                <Row
+                  key={i}
+                  a={a}
+                  onTogglePause={() => props.onTogglePause(i)}
+                  onEdit={() => setEditing({ index: i })}
+                />
               ))}
             </>
           ))
         ) : (
           <div class="empty">
-            <h2>No alerts yet</h2>
+            <h2>{preset === null ? "No presets yet" : "No alerts in this preset"}</h2>
             <p>
-              Bring your AfkWarden setup across — presets, alerts and all — or start a new
-              one from scratch.
+              Bring your AfkWarden setup across — presets, alerts and all — or start a new one from
+              scratch.
             </p>
             <button class="btn" onClick={() => setImportOpen(true)}>
               Import from AfkWarden
+            </button>
+            <button class="btn btn--ghost" onClick={() => promptPreset("new")}>
+              New empty preset
             </button>
           </div>
         )}
       </main>
 
       <footer class="ftr">
-        <button class="iconbtn" onClick={() => setImportOpen(true)} title="Import from AfkWarden">
-          ⭳
+        <button class="iconbtn" onClick={() => setSettingsOpen(true)} title="Settings">
+          ⚙
         </button>
         <button
           class="iconbtn"
@@ -243,6 +400,27 @@ export function App(props: AppProps) {
         open={importOpen}
         onClose={() => setImportOpen(false)}
         onImport={props.onImport}
+      />
+      <ExportDialog preset={exporting} onClose={() => setExporting(null)} />
+      <SettingsDialog
+        open={settingsOpen}
+        settings={settings}
+        onChange={props.onSettings}
+        onClose={() => setSettingsOpen(false)}
+      />
+      <AlertEditor
+        open={editing !== null}
+        alert={editingAlert}
+        groups={groups}
+        onSave={(next) => {
+          props.onSaveAlert(editing?.index ?? null, next);
+          setEditing(null);
+        }}
+        onDelete={() => {
+          if (editing?.index != null) props.onDeleteAlert(editing.index);
+          setEditing(null);
+        }}
+        onClose={() => setEditing(null)}
       />
     </>
   );

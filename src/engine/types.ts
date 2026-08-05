@@ -1,6 +1,7 @@
 import type { ZodType } from "zod";
 import type { RsGeometry } from "~/alt1-io/geometry";
 import type { ReaderAccess } from "~/readers/bundle";
+import type { FieldSpec } from "~/engine/fields";
 
 export type RGB = [number, number, number];
 
@@ -68,6 +69,8 @@ export interface AlerterModule<TVars> {
   typename: string;
   descr: string;
   schema: ZodType<TVars>;
+  /** Editable settings, in the order they should appear in the editor. */
+  fields: FieldSpec[];
   /** How many master ticks between checks. 1 = every 600ms. */
   ticks?: number;
   create(vars: TVars): AlerterRuntime;

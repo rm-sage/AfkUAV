@@ -57,6 +57,18 @@ export const buffsAlerter = defineAlerter<BuffVars>({
   typename: "Buffs",
   descr: "Triggers when a buff or debuff runs out, or is about to.",
   schema: BuffVars,
+  fields: [
+    { key: "bufftype", kind: "buffimage", label: "Buff to watch" },
+    {
+      key: "starttime",
+      kind: "number",
+      label: "Start bar at",
+      min: 1,
+      suffix: "sec",
+      help: "How much time remaining counts as a full bar.",
+    },
+    { key: "endtime", kind: "number", label: "Alert at", min: 0, suffix: "sec remaining" },
+  ],
   create(vars) {
     // Smooths the countdown between discrete timer reads: the on-screen number
     // only changes once a second at best, and less often for long timers.

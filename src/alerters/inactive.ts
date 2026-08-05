@@ -30,6 +30,15 @@ export const inactiveAlerter = defineAlerter<InactiveVars>({
   descr:
     "Triggers when you have not clicked the RuneScape window for a set amount of time.",
   schema: InactiveVars,
+  fields: [
+    { key: "delay", kind: "number", label: "Alert after", min: 1, suffix: "sec" },
+    {
+      key: "countMouseMovement",
+      kind: "boolean",
+      label: "Count mouse movement as activity",
+      help: "RuneScape treats hovering as activity. Off by default: counting it can warn you late, and warning late is the one failure this alert must not have.",
+    },
+  ],
   create(vars) {
     return {
       check(ctx: AlerterContext): TriggerState {
