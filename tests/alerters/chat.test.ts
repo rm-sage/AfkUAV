@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { chatAlerter } from "~/alerters/chat";
 import type { AlerterContext, ChatLine, RGB } from "~/engine/types";
+import { NULL_READERS } from "~/readers/bundle";
 
 function line(text: string, color: RGB = [255, 255, 255]): ChatLine {
   return { text, color, fragments: [text] };
 }
 
 function ctx(over: Partial<AlerterContext> = {}): AlerterContext {
-  return { tick: 1, now: 1_000_000, idleMs: 999_999, mouseIdleMs: 999_999, hasGameState: true, chatLines: [], geometry: null, ...over };
+  return { tick: 1, now: 1_000_000, idleMs: 999_999, mouseIdleMs: 999_999, hasGameState: true, chatLines: [], readers: NULL_READERS, geometry: null, ...over };
 }
 
 const serenVars = {

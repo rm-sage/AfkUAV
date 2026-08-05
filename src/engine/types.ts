@@ -1,5 +1,6 @@
 import type { ZodType } from "zod";
 import type { RsGeometry } from "~/alt1-io/geometry";
+import type { ReaderAccess } from "~/readers/bundle";
 
 export type RGB = [number, number, number];
 
@@ -41,6 +42,8 @@ export interface AlerterContext {
   hasGameState: boolean;
   /** Deduped union of new lines across every monitored chatbox this tick. */
   chatLines: readonly ChatLine[];
+  /** Pull-based, per-tick-memoized access to the screen readers. */
+  readers: ReaderAccess;
   geometry: RsGeometry | null;
 }
 

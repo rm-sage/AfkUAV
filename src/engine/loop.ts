@@ -1,6 +1,7 @@
 import type { GeometryWatch } from "~/alt1-io/geometry";
 import type { ChatboxPool } from "~/readers/chatbox-pool";
 import type { AnchorHealth } from "~/readers/anchor";
+import { NULL_READERS, type TickReaders } from "~/readers/bundle";
 import { getAlerterModule } from "~/engine/registry";
 import type { AlerterBase } from "~/store/schema";
 import {
@@ -30,6 +31,8 @@ export type LoopDeps = {
   /** Milliseconds since the in-game cursor last moved. */
   mouseIdleMs: () => number;
   hasGameState: () => boolean;
+  /** Screen readers other than chat. Defaults to reporting nothing. */
+  readers?: TickReaders;
   geometry: GeometryWatch;
   /** Returns the single shared capture for this tick, or null when unavailable. */
   capture: () => unknown | null;
@@ -122,9 +125,11 @@ export class TickLoop {
     if (this.deps.geometry.poll()) {
       // Resize or UI-scale change: every cached reader position is now suspect.
       this.deps.chat.invalidate("geometry-change");
+      this.deps.readers?.invalidateAll("geometry-change");
     }
 
     const img = this.deps.capture();
+    this.deps.readers?.beginTick(this.tick, img);
     const chatLines = img === null ? [] : this.deps.chat.update(this.tick, img, this.#chatColors());
 
     const ctx: AlerterContext = {
@@ -134,6 +139,7 @@ export class TickLoop {
       mouseIdleMs: this.deps.mouseIdleMs(),
       hasGameState: this.deps.hasGameState(),
       chatLines,
+      readers: this.deps.readers ?? NULL_READERS,
       geometry: this.deps.geometry.current,
     };
 

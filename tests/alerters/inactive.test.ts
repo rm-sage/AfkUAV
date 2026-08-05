@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { inactiveAlerter } from "~/alerters/inactive";
 import type { AlerterContext } from "~/engine/types";
+import { NULL_READERS } from "~/readers/bundle";
 
 function ctx(over: Partial<AlerterContext> = {}): AlerterContext {
   return {
@@ -11,6 +12,7 @@ function ctx(over: Partial<AlerterContext> = {}): AlerterContext {
     mouseIdleMs: 0,
     hasGameState: true,
     chatLines: [],
+    readers: NULL_READERS,
     geometry: null,
     ...over,
   };
