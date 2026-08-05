@@ -76,6 +76,13 @@ export const chatAlerter = defineAlerter<ChatVars>({
           return { triggered: false, bar: 0, functional: false };
         }
 
+        // No chatbox located means this alert is blind, not quiet. Saying so is
+        // the difference between "nothing happened" and "I would never have told
+        // you if it had".
+        if (!ctx.chatAvailable) {
+          return { triggered, bar: triggered ? 1 : 0, functional: false };
+        }
+
         if (triggered && vars.resetonactive && ctx.hasGameState) {
           // Both sides are "milliseconds since": idleMs since the last click, and
           // (now - triggeredAt) since this alert fired. The smaller value is the

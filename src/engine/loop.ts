@@ -139,6 +139,7 @@ export class TickLoop {
       mouseIdleMs: this.deps.mouseIdleMs(),
       hasGameState: this.deps.hasGameState(),
       chatLines,
+      chatAvailable: this.deps.chat.health.state === "ok",
       readers: this.deps.readers ?? NULL_READERS,
       geometry: this.deps.geometry.current,
     };

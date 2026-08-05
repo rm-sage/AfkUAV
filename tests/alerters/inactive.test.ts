@@ -12,6 +12,7 @@ function ctx(over: Partial<AlerterContext> = {}): AlerterContext {
     mouseIdleMs: 0,
     hasGameState: true,
     chatLines: [],
+    chatAvailable: true,
     readers: NULL_READERS,
     geometry: null,
     ...over,

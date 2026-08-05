@@ -37,6 +37,7 @@ function ctx(slots: BuffSlot[] | null, now = 0, over: Partial<AlerterContext> = 
     mouseIdleMs: 0,
     hasGameState: true,
     chatLines: [],
+    chatAvailable: true,
     readers: { ...NULL_READERS, buffs: () => slots, debuffs: () => slots },
     geometry: null,
     ...over,

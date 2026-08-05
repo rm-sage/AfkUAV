@@ -8,7 +8,7 @@ function line(text: string, color: RGB = [255, 255, 255]): ChatLine {
 }
 
 function ctx(over: Partial<AlerterContext> = {}): AlerterContext {
-  return { tick: 1, now: 1_000_000, idleMs: 999_999, mouseIdleMs: 999_999, hasGameState: true, chatLines: [], readers: NULL_READERS, geometry: null, ...over };
+  return { tick: 1, now: 1_000_000, idleMs: 999_999, mouseIdleMs: 999_999, hasGameState: true, chatLines: [], chatAvailable: true, readers: NULL_READERS, geometry: null, ...over };
 }
 
 const serenVars = {
@@ -125,6 +125,22 @@ describe("chatAlerter", () => {
     const r = a.check(ctx({ chatLines: [line("anything")] }));
     expect(r.functional).toBe(false);
     expect(r.triggered).toBe(false);
+  });
+
+  // "No matching message" and "I cannot see the chatbox" must not look identical.
+  it("reports non-functional when no chatbox is found", () => {
+    const a = chatAlerter.create(serenVars);
+    const r = a.check(ctx({ chatAvailable: false }));
+    expect(r.functional).toBe(false);
+    expect(r.triggered).toBe(false);
+  });
+
+  it("keeps an existing trigger visible while the chatbox is lost", () => {
+    const a = chatAlerter.create(serenVars);
+    a.check(ctx({ chatLines: [line("A Seren spirit appears", [0, 255, 255])] }));
+    const r = a.check(ctx({ chatAvailable: false }));
+    expect(r.triggered).toBe(true);
+    expect(r.functional).toBe(false);
   });
 
   it("reset() clears the triggered state", () => {

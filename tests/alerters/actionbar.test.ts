@@ -11,6 +11,7 @@ function ctx(bar: ActionbarState | null, over: Partial<AlerterContext> = {}): Al
     mouseIdleMs: 0,
     hasGameState: true,
     chatLines: [],
+    chatAvailable: true,
     readers: { ...NULL_READERS, actionbar: () => bar },
     geometry: null,
     ...over,

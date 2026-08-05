@@ -92,12 +92,15 @@ export function AlertEditor(props: AlertEditorProps) {
           <p class="fld__help">{module?.descr ?? ""}</p>
         </div>
       ) : (
-        <p class="fld__help">
-          {module?.typename ?? draft.type}
-          {module === undefined && KNOWN_ALERTER_TYPES.has(draft.type)
-            ? " — not implemented yet, so this alert will not run."
-            : ""}
-        </p>
+        <div class="fld">
+          <label class="fld__label">Type</label>
+          <p class="fld__help">
+            {module?.typename ?? draft.type}
+            {module === undefined && KNOWN_ALERTER_TYPES.has(draft.type)
+              ? " — not implemented yet, so this alert will not run."
+              : ""}
+          </p>
+        </div>
       )}
 
       <div class="fld">

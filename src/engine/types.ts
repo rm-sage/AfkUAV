@@ -43,6 +43,13 @@ export interface AlerterContext {
   hasGameState: boolean;
   /** Deduped union of new lines across every monitored chatbox this tick. */
   chatLines: readonly ChatLine[];
+  /**
+   * Whether a chatbox is currently located.
+   *
+   * Without this a chat alert cannot tell "no matching message" from "I cannot
+   * see the chatbox at all", and would report itself healthy while blind.
+   */
+  chatAvailable: boolean;
   /** Pull-based, per-tick-memoized access to the screen readers. */
   readers: ReaderAccess;
   geometry: RsGeometry | null;

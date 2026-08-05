@@ -15,6 +15,7 @@ function ctx(
     mouseIdleMs: 0,
     hasGameState: true,
     chatLines: [],
+    chatAvailable: true,
     readers: { ...NULL_READERS, xp: (s) => xp[s] ?? null },
     geometry: null,
     ...over,
