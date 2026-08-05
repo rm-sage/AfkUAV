@@ -17,17 +17,20 @@ const path = fileURLToPath(
 const describeIfPresent = existsSync(path) ? describe : describe.skip;
 
 describeIfPresent("real AfkWarden config", () => {
-  const raw: unknown = JSON.parse(readFileSync(path, "utf8"));
+  // Read lazily: describe.skip still EXECUTES its callback to collect test names,
+  // so reading at this scope would throw ENOENT on any machine without the file
+  // (notably CI) despite the suite being skipped.
+  const load = (): unknown => JSON.parse(readFileSync(path, "utf8"));
 
   it("imports every preset", () => {
-    const r = importAfkWarden(raw);
+    const r = importAfkWarden(load());
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(r.presets).toHaveLength(15);
   });
 
   it("recognises every alerter type present", () => {
-    const r = importAfkWarden(raw);
+    const r = importAfkWarden(load());
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     const unknown = r.issues.filter((i) => i.message.includes("Unknown alerter type"));
@@ -35,7 +38,7 @@ describeIfPresent("real AfkWarden config", () => {
   });
 
   it("promotes the header alerters in the Zuk preset to groups", () => {
-    const r = importAfkWarden(raw);
+    const r = importAfkWarden(load());
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     const zuk = r.presets.find((p) => p.name === "Zuk");
@@ -44,7 +47,7 @@ describeIfPresent("real AfkWarden config", () => {
   });
 
   it("preserves the alerter population", () => {
-    const r = importAfkWarden(raw);
+    const r = importAfkWarden(load());
     expect(r.ok).toBe(true);
     if (!r.ok) return;
 
@@ -66,7 +69,7 @@ describeIfPresent("real AfkWarden config", () => {
   });
 
   it("normalises every treshold occurrence", () => {
-    const r = importAfkWarden(raw);
+    const r = importAfkWarden(load());
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     for (const a of r.presets.flatMap((p) => p.alerters)) {
