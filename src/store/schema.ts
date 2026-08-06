@@ -42,6 +42,11 @@ export const PresetSchema = z.object({
 
 export const SettingsSchema = z.object({
   activeSuppress: z.boolean().default(false),
+  /**
+   * Hold every alert while the player is on the login screen or in the lobby,
+   * so a lobby timer does not fire at you while you are already in the lobby.
+   */
+  suppressWhenLoggedOut: z.boolean().default(true),
   globalAlarm: AlarmSchema.nullable().default({ sound: "elevator", repeat: false }),
   showTaskbarOverlay: z.boolean().default(true),
   volume: z.number().min(0).max(1).default(0.5),

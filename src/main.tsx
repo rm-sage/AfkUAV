@@ -9,6 +9,7 @@ import {
   makeChatboxReader,
   mixColor,
   mousePosition,
+  currentWorld,
   rsFocused,
   setTooltip,
   taskbarSetter,
@@ -35,7 +36,7 @@ let settings: Settings = store.loadSettings();
 let activeName: string | null = store.loadActivePresetName() ?? presets[0]?.name ?? null;
 
 const chat = new ChatboxPool({ makeReader: makeChatboxReader, mixColor });
-const mouse = new MouseActivityWatch(mousePosition, () => Date.now());
+const mouse = new MouseActivityWatch(mousePosition, () => Date.now(), rsFocused);
 const readers = new TickReaders({
   actionbar: actionbarReader(),
   buffs: buffReader(false),
@@ -48,6 +49,8 @@ const loop = new TickLoop({
   idleMs,
   mouseIdleMs: () => mouse.idleMs,
   hasGameState,
+  currentWorld,
+  suppressWhenLoggedOut: () => settings.suppressWhenLoggedOut,
   readers,
   geometry: new GeometryWatch(liveHost),
   capture: captureRs,

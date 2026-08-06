@@ -3,6 +3,7 @@ import type { ChatboxPool } from "~/readers/chatbox-pool";
 import type { AnchorHealth } from "~/readers/anchor";
 import { NULL_READERS, type TickReaders } from "~/readers/bundle";
 import { getAlerterModule } from "~/engine/registry";
+import { loginGate } from "~/engine/login-gate";
 import type { AlerterBase } from "~/store/schema";
 import {
   IDLE,
@@ -31,6 +32,10 @@ export type LoopDeps = {
   /** Milliseconds since the in-game cursor last moved. */
   mouseIdleMs: () => number;
   hasGameState: () => boolean;
+  /** Alt1's reported world; -1 means logged out or in the lobby. */
+  currentWorld?: () => number;
+  /** Whether the logged-out gate is enabled. */
+  suppressWhenLoggedOut?: () => boolean;
   /** Screen readers other than chat. Defaults to reporting nothing. */
   readers?: TickReaders;
   geometry: GeometryWatch;
@@ -119,8 +124,31 @@ export class TickLoop {
     return out;
   }
 
+  /** Set when every alert is being held, e.g. because the player is logged out. */
+  heldReason: string | null = null;
+
   step(): void {
     this.tick++;
+
+    const gate = loginGate(
+      {
+        world: this.deps.currentWorld?.() ?? -1,
+        hasGameState: this.deps.hasGameState(),
+      },
+      this.deps.suppressWhenLoggedOut?.() ?? false,
+    );
+
+    if (gate.held) {
+      this.heldReason = gate.reason;
+      // Clear rather than freeze: an alert that fired just before you logged out
+      // should not still be screaming when you get back to the login screen.
+      for (const a of this.alerters) {
+        a.runtime?.reset?.();
+        a.state = { triggered: false, bar: 0, functional: false };
+      }
+      return;
+    }
+    this.heldReason = null;
 
     if (this.deps.geometry.poll()) {
       // Resize or UI-scale change: every cached reader position is now suspect.

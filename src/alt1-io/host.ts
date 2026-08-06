@@ -92,6 +92,18 @@ export function rsFocused(): boolean {
 }
 
 /**
+ * The world the player is logged into, or -1 for "not logged in or in the lobby".
+ *
+ * Also reads -1 on some proxied worlds per Alt1's own docs, so consumers must
+ * treat -1 as "possibly logged out" rather than proof.
+ */
+export function currentWorld(): number {
+  if (!hasAlt1()) return -1;
+  const v = (alt1 as Record<string, unknown>).currentWorld;
+  return typeof v === "number" ? v : -1;
+}
+
+/**
  * In-game cursor position, or null when the cursor is outside the RS client.
  *
  * Alt1 packs it as a single int (`x = r >> 16`, `y = r & 0xFFFF`) and uses -1 as

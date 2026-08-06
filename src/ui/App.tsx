@@ -278,39 +278,49 @@ export function App(props: AppProps) {
       </header>
 
       <div class="subhdr">
-        <button class="iconbtn" title="New preset" onClick={() => promptPreset("new")}>
-          ＋
+        <button class="toolbtn" title="New preset" aria-label="New preset" onClick={() => promptPreset("new")}>
+          🗋
         </button>
         <button
-          class="iconbtn"
+          class="toolbtn"
           title="Rename preset"
+          aria-label="Rename preset"
           disabled={preset === null}
           onClick={() => promptPreset("rename")}
         >
-          ✎
+          ✏
         </button>
         <button
-          class="iconbtn"
+          class="toolbtn"
           title="Duplicate preset"
+          aria-label="Duplicate preset"
           disabled={preset === null}
           onClick={() => promptPreset("duplicate")}
         >
           ⧉
         </button>
+        <span class="toolbtn__sep" />
         <button
-          class="iconbtn"
+          class="toolbtn"
           title="Export preset"
+          aria-label="Export preset"
           disabled={preset === null}
           onClick={() => setExporting(preset)}
         >
-          ⭱
-        </button>
-        <button class="iconbtn" title="Import from AfkWarden" onClick={() => setImportOpen(true)}>
-          ⭳
+          ⬆
         </button>
         <button
-          class="iconbtn iconbtn--danger"
+          class="toolbtn"
+          title="Import from AfkWarden"
+          aria-label="Import from AfkWarden"
+          onClick={() => setImportOpen(true)}
+        >
+          ⬇
+        </button>
+        <button
+          class="toolbtn toolbtn--danger"
           title="Delete preset"
+          aria-label="Delete preset"
           disabled={preset === null}
           onClick={() => {
             if (preset === null) return;
@@ -323,13 +333,22 @@ export function App(props: AppProps) {
         </button>
         <span class="ftr__spacer" />
         <button
-          class="btn btn--sm"
+          class="toolbtn toolbtn--accent"
+          title="Add alert"
+          aria-label="Add alert"
           disabled={preset === null}
           onClick={() => setEditing({ index: null })}
         >
-          + Alert
+          ＋
         </button>
       </div>
+
+      {loop.heldReason !== null ? (
+        <div class="held">
+          <span class="held__dot" />
+          {loop.heldReason} — alerts are on hold.
+        </div>
+      ) : null}
 
       <main class="list">
         {anyAlerters ? (

@@ -52,10 +52,71 @@ body {
 .subhdr {
   display: flex;
   align-items: center;
-  gap: 2px;
-  padding: 4px 8px;
+  gap: 3px;
+  padding: 5px 7px;
   background: var(--bg-raised);
   border-bottom: 1px solid var(--border);
+}
+
+/*
+ * Toolbar buttons carry the whole preset workflow, and the app runs in a window
+ * barely wider than a phone. Small glyphs were unreadable there, so these get a
+ * real hit target and enough weight to tell apart at a glance.
+ */
+.toolbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 28px;
+  flex: none;
+  background: var(--bg-row);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-dim);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease, transform 0.14s ease;
+}
+
+.toolbtn:hover:not(:disabled) {
+  background: var(--bg-row-hover);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+.toolbtn:active:not(:disabled) {
+  transform: translateY(0) scale(0.94);
+}
+
+.toolbtn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.toolbtn:disabled {
+  opacity: 0.32;
+  cursor: default;
+}
+
+.toolbtn--accent {
+  color: var(--accent);
+  border-color: rgba(91, 157, 255, 0.4);
+}
+
+.toolbtn--danger:hover:not(:disabled) {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: rgba(248, 113, 113, 0.12);
+}
+
+.toolbtn__sep {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  margin: 0 3px;
+  flex: none;
 }
 
 .iconbtn:disabled {
@@ -70,6 +131,36 @@ body {
 
 .iconbtn--danger:hover:not(:disabled) {
   color: var(--danger);
+}
+
+/* ---------- held banner ---------- */
+
+.held {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  background: rgba(251, 191, 36, 0.12);
+  border-bottom: 1px solid rgba(251, 191, 36, 0.35);
+  color: var(--warn);
+  font-size: 11.5px;
+  animation: slidedown 0.22s ease;
+}
+
+.held__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--warn);
+  flex: none;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes slidedown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
 }
 
 /* ---------- header ---------- */

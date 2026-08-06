@@ -118,6 +118,22 @@ export function SettingsDialog({ open, settings, onChange, onClose }: SettingsDi
         </p>
       </div>
 
+      <div class="fld fld--check">
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.suppressWhenLoggedOut}
+            onChange={(e) => set("suppressWhenLoggedOut", (e.target as HTMLInputElement).checked)}
+          />
+          Hold alerts while logged out or in the lobby
+        </label>
+        <p class="fld__help">
+          Uses the world Alt1 reports rather than looking for an icon on screen, so moving or
+          hiding your minimap does not break it. On a few proxied worlds Alt1 cannot tell — if the
+          banner says you are logged out while you are plainly playing, turn this off.
+        </p>
+      </div>
+
       <h3 class="dlg__section">Display</h3>
 
       <div class="fld fld--check">

@@ -4,9 +4,11 @@ import { MouseActivityWatch, type MousePoint } from "~/alt1-io/activity";
 function harness(start = 1_000) {
   let t = start;
   let pos: MousePoint | null = { x: 10, y: 10 };
+  let active = true;
   const w = new MouseActivityWatch(
     () => pos,
     () => t,
+    () => active,
   );
   return {
     watch: w,
@@ -15,6 +17,9 @@ function harness(start = 1_000) {
     },
     move(next: MousePoint | null) {
       pos = next;
+    },
+    setActive(next: boolean) {
+      active = next;
     },
   };
 }
@@ -90,5 +95,61 @@ describe("MouseActivityWatch", () => {
     h.watch.poll();
     h.advance(1_500);
     expect(h.watch.idleMs).toBe(1_500);
+  });
+});
+
+// The reported bug: a fullscreen window covering the game on the same monitor.
+// alt1.mousePosition still reports a position because the cursor is inside the
+// client rectangle, so navigating that window read as hovering the game and
+// reset the lobby timer.
+describe("MouseActivityWatch while RuneScape is not the active window", () => {
+  it("ignores movement over a window covering the game", () => {
+    const h = harness();
+    h.watch.poll();
+    h.setActive(false);
+    h.watch.poll();
+
+    // Cursor moves repeatedly across the covering window.
+    for (let i = 0; i < 5; i++) {
+      h.advance(1_000);
+      h.move({ x: 100 + i * 10, y: 200 + i * 10 });
+      h.watch.poll();
+    }
+    expect(h.watch.idleMs).toBe(5_000);
+  });
+
+  it("keeps accruing idle while the game is in the background", () => {
+    const h = harness();
+    h.watch.poll();
+    h.setActive(false);
+    h.watch.poll();
+    h.advance(30_000);
+    h.watch.poll();
+    expect(h.watch.idleMs).toBe(30_000);
+  });
+
+  // Coming back to the game is itself an interaction, so one reset is right.
+  it("counts refocusing the game as activity", () => {
+    const h = harness();
+    h.setActive(false);
+    h.watch.poll();
+    h.advance(9_000);
+    h.setActive(true);
+    h.watch.poll();
+    expect(h.watch.idleMs).toBe(0);
+  });
+
+  it("resumes tracking movement once the game is active again", () => {
+    const h = harness();
+    h.setActive(false);
+    h.watch.poll();
+    h.setActive(true);
+    h.watch.poll();
+    h.advance(4_000);
+    h.watch.poll();
+    expect(h.watch.idleMs).toBe(4_000);
+    h.move({ x: 55, y: 55 });
+    h.watch.poll();
+    expect(h.watch.idleMs).toBe(0);
   });
 });

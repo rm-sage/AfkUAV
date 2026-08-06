@@ -21,13 +21,21 @@ export class MouseActivityWatch {
   #seen = false;
   #lastMovedAt = 0;
 
+  /**
+   * @param isActive whether RuneScape is the foreground window. Required because
+   *   `alt1.mousePosition` reports a position whenever the cursor is inside the
+   *   client RECTANGLE, foreground or not — so moving the mouse across a window
+   *   covering the game would otherwise read as hovering it. The game does not
+   *   count that, and neither should this.
+   */
   constructor(
     private readonly getPosition: () => MousePoint | null,
     private readonly now: () => number,
+    private readonly isActive: () => boolean = () => true,
   ) {}
 
   poll(): void {
-    const next = this.getPosition();
+    const next = this.isActive() ? this.getPosition() : null;
     const moved =
       !this.#seen ||
       (next === null) !== (this.#last === null) ||
