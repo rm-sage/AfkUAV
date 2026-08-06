@@ -1,5 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { MouseActivityWatch, type MousePoint } from "~/alt1-io/activity";
+import { MouseActivityWatch, hoverCountsAsActivity, type MousePoint } from "~/alt1-io/activity";
+
+describe("hoverCountsAsActivity", () => {
+  it("counts hover while the game is focused", () => {
+    expect(hoverCountsAsActivity(true, false)).toBe(true);
+  });
+
+  // RuneScape counts hovering while merely unfocused, and Alt1 has no visibility
+  // API — but a chatbox the reader can currently locate proves the game is on
+  // screen, because a covering window would land in the capture instead.
+  it("counts hover while unfocused if a chatbox is currently located", () => {
+    expect(hoverCountsAsActivity(false, true)).toBe(true);
+  });
+
+  it("ignores hover when unfocused and no chatbox can be seen", () => {
+    expect(hoverCountsAsActivity(false, false)).toBe(false);
+  });
+});
 
 function harness(start = 1_000) {
   let t = start;

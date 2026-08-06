@@ -1,6 +1,32 @@
 export type MousePoint = { x: number; y: number };
 
 /**
+ * Whether hovering the client should count as activity right now.
+ *
+ * The problem: `alt1.mousePosition` reports a position whenever the cursor is
+ * inside the client RECTANGLE, so a window covering the game produces hovers the
+ * game never sees. Alt1 exposes no visibility or z-order API — `rsActive` (focus)
+ * is the only window-state signal — so occlusion cannot be asked about directly.
+ *
+ * But RuneScape does count hovering while merely unfocused, and treating focus as
+ * the test throws that away.
+ *
+ * The middle ground uses the screen capture as the visibility proof. Alt1's
+ * default capture reads the screen, so a covering window lands in the capture and
+ * the chatbox reader stops being able to locate its box. A chatbox that is
+ * currently found is therefore live evidence that the game is genuinely on
+ * screen, whether or not it holds focus.
+ *
+ * Degrades safely in both directions: with no chatbox open this falls back to
+ * focus-only, which is the conservative answer, and the window between a game
+ * being covered and the reader noticing is a few seconds — irrelevant against a
+ * timer measured in minutes.
+ */
+export function hoverCountsAsActivity(rsFocused: boolean, chatboxFound: boolean): boolean {
+  return rsFocused || chatboxFound;
+}
+
+/**
  * Tracks how long the in-game cursor has sat still.
  *
  * RuneScape treats mouse movement over the client as activity, not just clicks,
@@ -22,20 +48,19 @@ export class MouseActivityWatch {
   #lastMovedAt = 0;
 
   /**
-   * @param isActive whether RuneScape is the foreground window. Required because
-   *   `alt1.mousePosition` reports a position whenever the cursor is inside the
-   *   client RECTANGLE, foreground or not — so moving the mouse across a window
-   *   covering the game would otherwise read as hovering it. The game does not
-   *   count that, and neither should this.
+   * @param canHover whether hovering should count right now — see
+   *   `hoverCountsAsActivity`. Without it, a window covering the game produces
+   *   hovers the game never sees, because `alt1.mousePosition` only tests the
+   *   client rectangle.
    */
   constructor(
     private readonly getPosition: () => MousePoint | null,
     private readonly now: () => number,
-    private readonly isActive: () => boolean = () => true,
+    private readonly canHover: () => boolean = () => true,
   ) {}
 
   poll(): void {
-    const next = this.isActive() ? this.getPosition() : null;
+    const next = this.canHover() ? this.getPosition() : null;
     const moved =
       !this.#seen ||
       (next === null) !== (this.#last === null) ||

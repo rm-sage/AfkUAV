@@ -14,7 +14,7 @@ import {
   setTooltip,
   taskbarSetter,
 } from "~/alt1-io/host";
-import { MouseActivityWatch } from "~/alt1-io/activity";
+import { MouseActivityWatch, hoverCountsAsActivity } from "~/alt1-io/activity";
 import { actionbarReader, buffReader, xpReader } from "~/alt1-io/readers";
 import { TickReaders } from "~/readers/bundle";
 import { AlarmScheduler } from "~/alerting/alarm";
@@ -37,7 +37,11 @@ let settings: Settings = store.loadSettings();
 let activeName: string | null = store.loadActivePresetName() ?? presets[0]?.name ?? null;
 
 const chat = new ChatboxPool({ makeReader: makeChatboxReader, mixColor });
-const mouse = new MouseActivityWatch(mousePosition, () => Date.now(), rsFocused);
+// A located chatbox proves the game is genuinely on screen, so hovering counts
+// even while the game is unfocused -- which matches how RuneScape behaves.
+const mouse = new MouseActivityWatch(mousePosition, () => Date.now(), () =>
+  hoverCountsAsActivity(rsFocused(), chat.health.state === "ok"),
+);
 const readers = new TickReaders({
   actionbar: actionbarReader(),
   buffs: buffReader(false),

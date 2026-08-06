@@ -259,7 +259,8 @@ body {
 .row {
   position: relative;
   display: grid;
-  grid-template-columns: 1fr auto;
+  /* grip · name · controls. A two-column track here wraps the controls. */
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 6px;
   padding: 6px 8px;
@@ -285,13 +286,17 @@ body {
   touch-action: none;
 }
 
+/*
+ * Reserves its column at all times and only fades in on hover, so rows do not
+ * shift sideways as the pointer moves down the list.
+ */
 .row__grip {
   position: relative;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   align-self: stretch;
-  padding: 0 5px 0 0;
-  margin-right: 1px;
+  width: 11px;
   color: var(--text-faint);
   font-size: 13px;
   line-height: 1;
