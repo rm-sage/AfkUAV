@@ -723,3 +723,56 @@ dialog.dlg--wide {
   cursor: default;
   filter: none;
 }
+
+/* ---------- custom sound list ---------- */
+
+.soundlist {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.soundlist li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 4px 3px 8px;
+  background: var(--bg-row);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 12px;
+}
+
+.soundlist__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+input[type="file"] {
+  width: 100%;
+  font: inherit;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+input[type="file"]::file-selector-button {
+  background: var(--bg-row);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px 10px;
+  margin-right: 8px;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+input[type="file"]::file-selector-button:hover {
+  background: var(--bg-row-hover);
+}

@@ -6,13 +6,27 @@ import { isSupported as speechSupported } from "~/alerting/speech";
 export type SettingsDialogProps = {
   open: boolean;
   settings: Settings;
+  soundNames: string[];
+  /** Labels referenced by alerts that have no audio supplied yet. */
+  missingSounds: string[];
   onChange(next: Settings): void;
+  onAddSounds(files: FileList): void;
+  onRemoveSound(name: string): void;
   onClose(): void;
 };
 
 const SOUND_OPTIONS = Object.entries(TONES).map(([value, spec]) => ({ value, label: spec.label }));
 
-export function SettingsDialog({ open, settings, onChange, onClose }: SettingsDialogProps) {
+export function SettingsDialog({
+  open,
+  settings,
+  soundNames,
+  missingSounds,
+  onChange,
+  onAddSounds,
+  onRemoveSound,
+  onClose,
+}: SettingsDialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -132,6 +146,52 @@ export function SettingsDialog({ open, settings, onChange, onClose }: SettingsDi
           hiding your minimap does not break it. On a few proxied worlds Alt1 cannot tell — if the
           banner says you are logged out while you are plainly playing, turn this off.
         </p>
+      </div>
+
+      <h3 class="dlg__section">Custom sounds</h3>
+
+      <p class="fld__help">
+        AfkWarden hosts custom sounds on its own server, so its alerts go quiet whenever that
+        server is unreachable. Add the audio files here and AfkUAV keeps them locally. Imported
+        alerts reconnect automatically when the file name matches the sound they referenced.
+      </p>
+
+      {missingSounds.length > 0 ? (
+        <p class="fld__help fld__help--warn">
+          Waiting on audio for: {missingSounds.join(", ")}. Those alerts use a built-in tone until
+          you add a matching file.
+        </p>
+      ) : null}
+
+      {soundNames.length > 0 ? (
+        <ul class="soundlist">
+          {soundNames.map((name) => (
+            <li key={name}>
+              <span class="soundlist__name">{name}</span>
+              <button
+                class="iconbtn iconbtn--danger"
+                title={`Remove ${name}`}
+                aria-label={`Remove ${name}`}
+                onClick={() => onRemoveSound(name)}
+              >
+                ×
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      <div class="fld">
+        <input
+          type="file"
+          accept="audio/*"
+          multiple
+          onChange={(e) => {
+            const input = e.target as HTMLInputElement;
+            if (input.files !== null && input.files.length > 0) onAddSounds(input.files);
+            input.value = "";
+          }}
+        />
       </div>
 
       <h3 class="dlg__section">Display</h3>

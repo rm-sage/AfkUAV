@@ -3,6 +3,7 @@ import { AlerterBaseSchema, type AlerterBase } from "~/store/schema";
 import { getAlerterModule, implementedModules } from "~/engine/registry";
 import { KNOWN_ALERTER_TYPES } from "~/engine/known-types";
 import { TONES } from "~/alerting/tones";
+import { soundLabel } from "~/alerting/sound-library";
 import { FieldEditor } from "~/ui/FieldEditor";
 
 export type AlertEditorProps = {
@@ -10,6 +11,7 @@ export type AlertEditorProps = {
   alert: AlerterBase | null;
   open: boolean;
   groups: string[];
+  soundNames: string[];
   onSave(next: AlerterBase): void;
   onDelete(): void;
   onClose(): void;
@@ -160,13 +162,26 @@ export function AlertEditor(props: AlertEditorProps) {
             }}
           >
             <option value="">None</option>
-            {SOUND_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-            {draft.alarm !== null && !Object.hasOwn(TONES, draft.alarm.sound) ? (
-              <option value={draft.alarm.sound}>{draft.alarm.sound} (imported)</option>
+            {props.soundNames.length > 0 ? (
+              <optgroup label="Your sounds">
+                {props.soundNames.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </optgroup>
+            ) : null}
+            <optgroup label="Built in">
+              {SOUND_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </optgroup>
+            {draft.alarm !== null &&
+            !Object.hasOwn(TONES, draft.alarm.sound) &&
+            !props.soundNames.includes(draft.alarm.sound) ? (
+              <option value={draft.alarm.sound}>{soundLabel(draft.alarm.sound)} (no audio yet)</option>
             ) : null}
           </select>
           <label class="fld__inline">

@@ -19,6 +19,7 @@ import { actionbarReader, buffReader, xpReader } from "~/alt1-io/readers";
 import { TickReaders } from "~/readers/bundle";
 import { AlarmScheduler } from "~/alerting/alarm";
 import { SoundPlayer } from "~/alerting/player";
+import { SoundLibrary, labelFromFilename, resolveSound } from "~/alerting/sound-library";
 import { TaskbarBar, shouldSuppress, taskbarState } from "~/alerting/taskbar";
 import { ChatboxPool } from "~/readers/chatbox-pool";
 import { TICK_MS, TickLoop } from "~/engine/loop";
@@ -72,7 +73,24 @@ function applyPreset(): void {
 }
 
 const alarms = new AlarmScheduler();
-const player = new SoundPlayer();
+const sounds = new SoundLibrary();
+const player = new SoundPlayer(sounds);
+
+void sounds.load().then(paint);
+
+/** Sound labels alerts refer to but for which no audio has been supplied. */
+function missingSounds(): string[] {
+  const wanted = new Set<string>();
+  for (const a of loop.alerters) {
+    if (a.config.alarm !== null) wanted.add(a.config.alarm.sound);
+  }
+  if (settings.globalAlarm !== null) wanted.add(settings.globalAlarm.sound);
+
+  return [...wanted]
+    .map((s) => resolveSound(s, sounds.names))
+    .filter((r) => r.kind === "missing")
+    .map((r) => r.name);
+}
 const taskbar = new TaskbarBar(taskbarSetter());
 
 // Leave the RuneScape taskbar icon undecorated when the app closes.
@@ -189,6 +207,18 @@ function paint(): void {
         mutateAlerts((alerts) => {
           alerts.splice(0, alerts.length, ...applyDrop(alerts, from, target));
         });
+      }}
+      soundNames={[...sounds.names].sort()}
+      missingSounds={missingSounds()}
+      onAddSounds={(files) => {
+        // Named from the filename so an imported `upload:<id>:<label>` ref
+        // reconnects to the same file the user originally uploaded.
+        void Promise.all(
+          [...files].map((f) => sounds.add(labelFromFilename(f.name), f)),
+        ).then(paint);
+      }}
+      onRemoveSound={(name) => {
+        void sounds.remove(name).then(paint);
       }}
       onPresetAction={handlePresetAction}
     />,

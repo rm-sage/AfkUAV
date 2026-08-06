@@ -28,6 +28,10 @@ export type AppProps = {
   onSaveAlert(index: number | null, alert: AlerterBase): void;
   onDeleteAlert(index: number): void;
   onReorder(from: number, target: DropTarget): void;
+  soundNames: string[];
+  missingSounds: string[];
+  onAddSounds(files: FileList): void;
+  onRemoveSound(name: string): void;
   onPresetAction(action: PresetAction): void;
 };
 
@@ -462,13 +466,18 @@ export function App(props: AppProps) {
       <SettingsDialog
         open={settingsOpen}
         settings={settings}
+        soundNames={props.soundNames}
+        missingSounds={props.missingSounds}
         onChange={props.onSettings}
+        onAddSounds={props.onAddSounds}
+        onRemoveSound={props.onRemoveSound}
         onClose={() => setSettingsOpen(false)}
       />
       <AlertEditor
         open={editing !== null}
         alert={editingAlert}
         groups={groups}
+        soundNames={props.soundNames}
         onSave={(next) => {
           props.onSaveAlert(editing?.index ?? null, next);
           setEditing(null);
