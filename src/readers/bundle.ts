@@ -24,16 +24,25 @@ export type BuffSlot = {
  * a preset with only chat alerts should never pay for OCR of the buff bar.
  * Results are memoized per tick, so ten buff alerts still read the bar once.
  */
+export type TargetState = { hp: number; name: string };
+export type DropEvent = { name: string; amount: number };
+
 export interface ReaderAccess {
   actionbar(): ActionbarState | null;
   buffs(): BuffSlot[] | null;
   debuffs(): BuffSlot[] | null;
   /** Current XP in a skill by AfkWarden's 3-letter code, or "total". */
   xp(skill: string): number | null;
+  /** True when a dialog with a continue button is on screen; null if not readable. */
+  dialogOpen(): boolean | null;
+  /** The currently targeted mob, or null when there is none. */
+  target(): TargetState | null;
+  /** Drops seen since the previous tick. */
+  newDrops(): readonly DropEvent[] | null;
   health(name: ReaderName): AnchorHealth | null;
 }
 
-export type ReaderName = "actionbar" | "buffs" | "debuffs" | "xp";
+export type ReaderName = "actionbar" | "buffs" | "debuffs" | "xp" | "dialog" | "target" | "drops";
 
 /** Reader access that always reports nothing. Used in tests and before Alt1 is present. */
 export const NULL_READERS: ReaderAccess = {
@@ -41,6 +50,9 @@ export const NULL_READERS: ReaderAccess = {
   buffs: () => null,
   debuffs: () => null,
   xp: () => null,
+  dialogOpen: () => null,
+  target: () => null,
+  newDrops: () => null,
   health: () => null,
 };
 
@@ -49,6 +61,9 @@ export type TickReaderSources = {
   buffs?: AnchoredReader<unknown, BuffSlot[]>;
   debuffs?: AnchoredReader<unknown, BuffSlot[]>;
   xp?: AnchoredReader<unknown, ReadonlyMap<string, number>>;
+  dialog?: AnchoredReader<unknown, boolean>;
+  target?: AnchoredReader<unknown, TargetState | null>;
+  drops?: AnchoredReader<unknown, DropEvent[]>;
 };
 
 /**
@@ -99,6 +114,20 @@ export class TickReaders implements ReaderAccess {
     const table = this.#read("xp", this.sources.xp);
     if (table === null) return null;
     return table.get(skill) ?? null;
+  }
+
+  dialogOpen(): boolean | null {
+    return this.#read("dialog", this.sources.dialog);
+  }
+
+  target(): TargetState | null {
+    // Two nulls collapse here: no reader, and a reader that sees no target.
+    // Both mean "nothing targeted", which is what callers act on.
+    return this.#read("target", this.sources.target) ?? null;
+  }
+
+  newDrops(): readonly DropEvent[] | null {
+    return this.#read("drops", this.sources.drops);
   }
 
   health(name: ReaderName): AnchorHealth | null {

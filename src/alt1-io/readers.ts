@@ -1,9 +1,12 @@
 import * as abilityModule from "alt1/ability";
 import * as buffsModule from "alt1/buffs";
 import * as xpModule from "alt1/xpcounter";
+import * as dialogModule from "alt1/dialog";
+import * as targetModule from "alt1/targetmob";
+import * as dropsModule from "alt1/dropsmenu";
 import { interopDefault, interopNamed } from "~/alt1-io/interop";
 import { AnchoredReader, type ReaderLike } from "~/readers/anchored-reader";
-import type { ActionbarState, BuffSlot } from "~/readers/bundle";
+import type { ActionbarState, BuffSlot, DropEvent, TargetState } from "~/readers/bundle";
 import type { Needle } from "~/readers/buff-match";
 
 /**
@@ -189,5 +192,115 @@ export function xpReader(): AnchoredReader<unknown, ReadonlyMap<string, number>>
   return new AnchoredReader<unknown, ReadonlyMap<string, number>>({
     make: makeXpReader,
     isEmpty: (out) => out.size === 0,
+  });
+}
+
+type Alt1DialogReader = {
+  pos: unknown;
+  find(img?: unknown): unknown;
+  read(img?: unknown): unknown;
+};
+
+export function makeDialogReader(): ReaderLike<unknown, boolean> {
+  const Ctor = interopDefault<new () => Alt1DialogReader>(dialogModule);
+  if (typeof Ctor !== "function") throw new Error("alt1/dialog did not export DialogReader");
+  const inner = new Ctor();
+
+  return {
+    get pos() {
+      return inner.pos ?? null;
+    },
+    set pos(value: unknown) {
+      inner.pos = value;
+    },
+    find(img: unknown) {
+      inner.find(img);
+      return inner.pos ?? null;
+    },
+    read(img: unknown) {
+      // read() returns `false` for "no dialog" and an object when one is up, so
+      // the boolean here is the answer rather than a truthiness accident.
+      const out = inner.read(img);
+      return out !== false && out !== null && out !== undefined;
+    },
+  };
+}
+
+export function dialogReader(): AnchoredReader<unknown, boolean> {
+  return new AnchoredReader<unknown, boolean>({ make: makeDialogReader });
+}
+
+type Alt1TargetReader = { read(img?: unknown): TargetState | null };
+
+/**
+ * The target reader has no position to anchor — it searches the whole client
+ * every read — so `find` reports a constant success and the anchor simply never
+ * has anything to invalidate.
+ */
+export function makeTargetReader(): ReaderLike<unknown, TargetState | null> {
+  const Ctor = interopDefault<new () => Alt1TargetReader>(targetModule);
+  if (typeof Ctor !== "function") throw new Error("alt1/targetmob did not export TargetMobReader");
+  const inner = new Ctor();
+  const ANCHORLESS = {};
+
+  return {
+    pos: ANCHORLESS,
+    find: () => ANCHORLESS,
+    read(img: unknown) {
+      return inner.read(img) ?? null;
+    },
+  };
+}
+
+export function targetReader(): AnchoredReader<unknown, TargetState | null> {
+  return new AnchoredReader<unknown, TargetState | null>({ make: makeTargetReader });
+}
+
+type Alt1DropsReader = {
+  pos: unknown;
+  onincrease: ((name: string, increase: number, newtotal: number) => unknown) | null;
+  find(img?: unknown): unknown;
+  read(img?: unknown): unknown;
+};
+
+/**
+ * The drops reader reports through a callback rather than a return value, so
+ * increases are buffered as they fire and drained once per read.
+ */
+export function makeDropsReader(): ReaderLike<unknown, DropEvent[]> {
+  const Ctor = interopDefault<new () => Alt1DropsReader>(dropsModule);
+  if (typeof Ctor !== "function") throw new Error("alt1/dropsmenu did not export DropsMenuReader");
+  const inner = new Ctor();
+
+  let pending: DropEvent[] = [];
+  inner.onincrease = (name: string, increase: number) => {
+    pending.push({ name, amount: increase });
+  };
+
+  return {
+    get pos() {
+      return inner.pos ?? null;
+    },
+    set pos(value: unknown) {
+      inner.pos = value;
+    },
+    find(img: unknown) {
+      inner.find(img);
+      return inner.pos ?? null;
+    },
+    read(img: unknown) {
+      inner.read(img);
+      const out = pending;
+      pending = [];
+      return out;
+    },
+  };
+}
+
+export function dropsReader(): AnchoredReader<unknown, DropEvent[]> {
+  return new AnchoredReader<unknown, DropEvent[]>({
+    make: makeDropsReader,
+    // No drops is the normal state, not evidence of a bad position.
+    isEmpty: () => false,
   });
 }

@@ -15,7 +15,14 @@ import {
   taskbarSetter,
 } from "~/alt1-io/host";
 import { MouseActivityWatch, hoverCountsAsActivity } from "~/alt1-io/activity";
-import { actionbarReader, buffReader, xpReader } from "~/alt1-io/readers";
+import {
+  actionbarReader,
+  buffReader,
+  dialogReader,
+  dropsReader,
+  targetReader,
+  xpReader,
+} from "~/alt1-io/readers";
 import { TickReaders } from "~/readers/bundle";
 import { AlarmScheduler } from "~/alerting/alarm";
 import { SoundPlayer } from "~/alerting/player";
@@ -48,6 +55,9 @@ const readers = new TickReaders({
   buffs: buffReader(false),
   debuffs: buffReader(true),
   xp: xpReader(),
+  dialog: dialogReader(),
+  target: targetReader(),
+  drops: dropsReader(),
 });
 
 const loop = new TickLoop({

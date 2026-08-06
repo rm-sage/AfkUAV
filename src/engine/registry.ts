@@ -5,6 +5,7 @@ import { actionbarAlerter } from "~/alerters/actionbar";
 import { buffsAlerter } from "~/alerters/buffs";
 import { bigXpAlerter, xpCounterAlerter } from "~/alerters/xpcounter";
 import { clockBasedAlerter } from "~/alerters/clockbased";
+import { dialogAlerter, dropsAlerter, targetDeathAlerter } from "~/alerters/misc";
 
 /**
  * Alerter modules that are implemented and wired up.
@@ -22,6 +23,9 @@ const MODULES: ReadonlyArray<AlerterModule<never>> = [
   xpCounterAlerter as unknown as AlerterModule<never>,
   bigXpAlerter as unknown as AlerterModule<never>,
   clockBasedAlerter as unknown as AlerterModule<never>,
+  dialogAlerter as unknown as AlerterModule<never>,
+  targetDeathAlerter as unknown as AlerterModule<never>,
+  dropsAlerter as unknown as AlerterModule<never>,
 ];
 
 const BY_TYPE = new Map<string, AlerterModule<never>>(MODULES.map((m) => [m.type, m]));
