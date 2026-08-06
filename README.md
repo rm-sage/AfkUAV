@@ -4,10 +4,11 @@ A modern replacement for the RuneScape 3 [Alt1 Toolkit](https://runeapps.org/alt
 **AfkWarden** — full feature parity, rebuilt UI, multi-chatbox monitoring, and fixes for two
 reliability defects that make the original intermittently unusable.
 
-> **Status:** usable. Installs, imports AfkWarden presets, and 6 of the 16 alerter types are live —
-> covering 106 of the 108 alerts in the reference config. Sound and text-to-speech alerts work.
-> Importing a preset that uses one of the remaining 10 types keeps the alert and flags it rather
-> than dropping it silently. No preset editor yet, so alerts are imported rather than authored.
+> **Status:** usable. Installs, imports AfkWarden presets, and 7 of the 16 alerter types are live —
+> covering 106 of the 108 alerts in the reference config. Full preset and alert editing, sound,
+> text-to-speech, local custom sounds, drag-to-reorder and the taskbar countdown all work. Importing
+> a preset that uses one of the remaining 9 types keeps the alert and flags it rather than dropping
+> it silently.
 
 ## Install
 
@@ -67,10 +68,15 @@ settings, and quick-add premades.
 | `buffs` | ✅ |
 | `xpcounter` | ✅ |
 | `bigxp` | ✅ |
-| `craftmenu`, `drops`, `sheathe`, `castlewars`, `dialogtextsimple`, `fightkiln`, `targetdeath`, `summoning`, `clockbased`, `necroritual` | not yet |
+| `clockbased` | ✅ |
+| `craftmenu`, `drops`, `sheathe`, `castlewars`, `dialogtextsimple`, `fightkiln`, `targetdeath`, `summoning`, `necroritual` | not yet |
 
-Ordered by how much they actually get used: the six above cover 106 of the 108 alerts in the config
-this was developed against. Chat alone is 67%.
+Ordered by how much they actually get used: these cover 106 of the 108 alerts in the config this was
+developed against. Chat alone is 67%.
+
+The nine remaining types read the screen through `@runeapps/common/readers/*` — RuneApps' private
+modules, which are not in the published `alt1` package. Each needs a reader written from scratch,
+including needle images captured from a live client.
 
 Alerts of a type that isn't implemented yet still import — they show an error badge rather than
 disappearing.
