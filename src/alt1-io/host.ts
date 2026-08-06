@@ -2,6 +2,7 @@ import * as a1lib from "alt1/base";
 import * as chatboxModule from "alt1/chatbox";
 import type { Alt1Host } from "~/alt1-io/geometry";
 import type { ChatboxLike } from "~/readers/chatbox-pool";
+import type { ChatLine, RGB } from "~/engine/types";
 import { interopDefault } from "~/alt1-io/interop";
 
 type ChatBoxReaderCtor = new () => ChatboxLike;
@@ -131,8 +132,101 @@ export function captureRs(): unknown | null {
   }
 }
 
+type Alt1TextFragment = { text: string; color: [number, number, number] };
+type Alt1ChatLine = { text: string; fragments: Alt1TextFragment[] };
+
+type Alt1ChatReader = {
+  pos: unknown;
+  readargs: { colors: number[] };
+  diffRead: boolean;
+  find(img: unknown): unknown;
+  read(img: unknown): Alt1ChatLine[] | null;
+};
+
+function distinctColors(fragments: readonly Alt1TextFragment[]): RGB[] {
+  const seen = new Set<string>();
+  const out: RGB[] = [];
+  for (const f of fragments) {
+    if (!Array.isArray(f.color)) continue;
+    const key = f.color.join(",");
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push([f.color[0], f.color[1], f.color[2]]);
+  }
+  return out;
+}
+
+/**
+ * Adapt alt1's chat lines to the shape the engine consumes.
+ *
+ * alt1 returns `{text, fragments, basey}` with colour living on each fragment,
+ * not on the line — a message is split per colour, so a white line can carry a
+ * coloured name or item inside it. Collecting every colour present is what lets
+ * a colour filter match on the part that actually matters.
+ */
 export function makeChatboxReader(): ChatboxLike {
-  return new ChatBoxReader();
+  const inner = new ChatBoxReader() as unknown as Alt1ChatReader;
+
+  return {
+    get pos() {
+      return inner.pos as never;
+    },
+    set pos(value) {
+      inner.pos = value;
+    },
+    get readargs() {
+      return inner.readargs;
+    },
+    find(img: unknown) {
+      return inner.find(img) as never;
+    },
+    read(img: unknown) {
+      const lines = inner.read(img);
+      if (lines === null || lines === undefined) return null;
+      return lines.map((l) => ({
+        text: l.text,
+        colors: distinctColors(l.fragments ?? []),
+        fragments: (l.fragments ?? []).map((f) => f.text),
+      }));
+    },
+  };
+}
+
+/**
+ * One-shot read of everything currently visible in the chatbox.
+ *
+ * Sets `diffRead` false, because the running readers only report lines that are
+ * NEW since their last read — correct for alerting, useless for a picker, which
+ * needs the whole box as it stands.
+ */
+export function probeChatLines(): { lines: ChatLine[]; boxes: number } | null {
+  if (!hasAlt1() || !permissions().pixel) return null;
+  try {
+    const img = a1lib.captureHoldFullRs();
+    const reader = new ChatBoxReader() as unknown as Alt1ChatReader;
+    reader.diffRead = false;
+    // No colour filter: show everything on screen and let the user choose.
+    reader.readargs.colors = [];
+
+    const pos = reader.find(img) as { boxes?: unknown[] } | null;
+    if (pos === null || pos === undefined) return null;
+
+    const lines = reader.read(img);
+    if (lines === null) return { lines: [], boxes: pos.boxes?.length ?? 0 };
+
+    return {
+      lines: lines
+        .filter((l) => l.text.trim().length > 0)
+        .map((l) => ({
+          text: l.text,
+          colors: distinctColors(l.fragments ?? []),
+          fragments: (l.fragments ?? []).map((f) => f.text),
+        })),
+      boxes: pos.boxes?.length ?? 0,
+    };
+  } catch {
+    return null;
+  }
 }
 
 export function mixColor(r: number, g: number, b: number): number {

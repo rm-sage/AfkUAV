@@ -3,8 +3,8 @@ import { chatAlerter } from "~/alerters/chat";
 import type { AlerterContext, ChatLine, RGB } from "~/engine/types";
 import { NULL_READERS } from "~/readers/bundle";
 
-function line(text: string, color: RGB = [255, 255, 255]): ChatLine {
-  return { text, color, fragments: [text] };
+function line(text: string, ...colors: RGB[]): ChatLine {
+  return { text, colors: colors.length > 0 ? colors : [[255, 255, 255]], fragments: [text] };
 }
 
 function ctx(over: Partial<AlerterContext> = {}): AlerterContext {

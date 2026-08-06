@@ -24,8 +24,10 @@ export type ChatVars = z.infer<typeof ChatVars>;
 
 function colorMatches(line: ChatLine, colors: readonly RGB[]): boolean {
   if (colors.length === 0) return true;
-  return colors.some(
-    (c) => c[0] === line.color[0] && c[1] === line.color[1] && c[2] === line.color[2],
+  // Any colour present in the line counts: the relevant part of a message is
+  // often not its first fragment.
+  return colors.some((c) =>
+    line.colors.some((l) => l[0] === c[0] && l[1] === c[1] && l[2] === c[2]),
   );
 }
 

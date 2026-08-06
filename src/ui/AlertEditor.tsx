@@ -5,6 +5,7 @@ import { KNOWN_ALERTER_TYPES } from "~/engine/known-types";
 import { TONES } from "~/alerting/tones";
 import { soundLabel } from "~/alerting/sound-library";
 import { FieldEditor } from "~/ui/FieldEditor";
+import { BuffPicker, ChatPicker } from "~/ui/CapturePickers";
 
 export type AlertEditorProps = {
   /** The alert being edited, or null when creating a new one. */
@@ -45,6 +46,10 @@ export function AlertEditor(props: AlertEditorProps) {
   }, [props.open]);
 
   const module = useMemo(() => getAlerterModule(draft.type), [draft.type]);
+  const [picker, setPicker] = useState<"buff" | "chat" | null>(null);
+  const chosenLines = Array.isArray(draft.vars.lines)
+    ? (draft.vars.lines as Array<{ text: string }>)
+    : [];
 
   const setVar = (key: string, value: unknown): void => {
     setDraft((d) => ({ ...d, vars: { ...d.vars, [key]: value } }));
@@ -130,8 +135,58 @@ export function AlertEditor(props: AlertEditorProps) {
           spec={spec}
           value={draft.vars[spec.key]}
           onChange={(v) => setVar(spec.key, v)}
+          onCapture={
+            spec.kind === "lines" && draft.type === "chat"
+              ? () => setPicker("chat")
+              : spec.kind === "buffimage"
+                ? () => setPicker("buff")
+                : undefined
+          }
         />
       ))}
+
+      <BuffPicker
+        open={picker === "buff"}
+        isDebuff={(draft.vars.bufftype as { isdebuff?: boolean } | undefined)?.isdebuff === true}
+        onPick={(imgstr) => {
+          const existing = (draft.vars.bufftype ?? {}) as Record<string, unknown>;
+          setVar("bufftype", { ...existing, imgstr, buffid: "" });
+          setPicker(null);
+        }}
+        onClose={() => setPicker(null)}
+      />
+
+      <ChatPicker
+        open={picker === "chat"}
+        chosen={chosenLines.map((l) => l.text)}
+        onPick={(text, colors) => {
+          // Both fields move together: a line is only useful alongside the
+          // colours it was written in, and asking the user to add those by hand
+          // is where a picked line would quietly stop matching.
+          setDraft((d) => {
+            const lines = Array.isArray(d.vars.lines)
+              ? (d.vars.lines as Array<{ text: string; percent: number }>)
+              : [];
+            const existing = Array.isArray(d.vars.colors) ? (d.vars.colors as number[][]) : [];
+
+            const nextLines = lines.some((l) => l.text === text)
+              ? lines
+              : [...lines, { text, percent: 100 }];
+
+            const seen = new Set(existing.map((c) => c.join(",")));
+            const nextColors = [...existing];
+            for (const c of colors) {
+              const key = c.join(",");
+              if (seen.has(key)) continue;
+              seen.add(key);
+              nextColors.push([c[0], c[1], c[2]]);
+            }
+
+            return { ...d, vars: { ...d.vars, lines: nextLines, colors: nextColors } };
+          });
+        }}
+        onClose={() => setPicker(null)}
+      />
 
       <hr class="dlg__rule" />
 

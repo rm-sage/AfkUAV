@@ -4,6 +4,8 @@ export type FieldEditorProps = {
   spec: FieldSpec;
   value: unknown;
   onChange(next: unknown): void;
+  /** Opens the in-game capture picker for fields that support one. */
+  onCapture?: () => void;
 };
 
 type RGB = [number, number, number];
@@ -26,7 +28,7 @@ function asColors(value: unknown): RGB[] {
 }
 
 /** Renders one editable setting from its declared spec. */
-export function FieldEditor({ spec, value, onChange }: FieldEditorProps) {
+export function FieldEditor({ spec, value, onChange, onCapture }: FieldEditorProps) {
   const help = spec.help !== undefined ? <p class="fld__help">{spec.help}</p> : null;
 
   if (spec.kind === "boolean") {
@@ -119,6 +121,11 @@ export function FieldEditor({ spec, value, onChange }: FieldEditorProps) {
             );
           }}
         />
+        {onCapture !== undefined ? (
+          <button class="btn btn--ghost btn--sm" onClick={onCapture}>
+            Pick from chat
+          </button>
+        ) : null}
         {help}
       </div>
     );
@@ -185,10 +192,13 @@ export function FieldEditor({ spec, value, onChange }: FieldEditorProps) {
           />
           Debuff bar
         </label>
+        {onCapture !== undefined ? (
+          <button class="btn btn--ghost btn--sm" onClick={onCapture}>
+            {typeof buff.imgstr === "string" && buff.imgstr.length > 0 ? "Recapture" : "Capture"}
+          </button>
+        ) : null}
       </div>
-      <p class="fld__help">
-        Icons come across with imported alerts. Capturing a new one in-game is not built yet.
-      </p>
+      {help}
     </div>
   );
 }

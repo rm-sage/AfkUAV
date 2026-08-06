@@ -776,3 +776,113 @@ input[type="file"]::file-selector-button {
 input[type="file"]::file-selector-button:hover {
   background: var(--bg-row-hover);
 }
+/* ---------- capture pickers ---------- */
+
+.buffgrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0;
+}
+
+.buffpick {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  background: var(--bg-row);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+
+.buffpick:hover {
+  transform: translateY(-2px) scale(1.06);
+  border-color: var(--accent);
+  background: var(--bg-row-hover);
+}
+
+.buffpick img {
+  width: 25px;
+  height: 25px;
+  image-rendering: pixelated;
+}
+
+/* Sparse icons are the ones that match unreliably; say so before it is picked. */
+.buffpick--sparse {
+  border-color: var(--warn);
+}
+
+.buffpick__time {
+  position: absolute;
+  right: 1px;
+  bottom: 0;
+  font-size: 9px;
+  color: var(--text-dim);
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 3px;
+  padding: 0 2px;
+}
+
+.chatlines {
+  list-style: none;
+  margin: 10px 0;
+  padding: 0;
+  max-height: 46vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.chatline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  padding: 4px 7px;
+  background: var(--bg-row);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.chatline:hover {
+  background: var(--bg-row-hover);
+  border-color: var(--accent);
+}
+
+.chatline--chosen {
+  border-color: var(--ok);
+  background: rgba(74, 222, 128, 0.1);
+}
+
+.chatline__text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: ui-monospace, Consolas, monospace;
+}
+
+.chatline__dots {
+  display: inline-flex;
+  gap: 2px;
+  flex: none;
+}
+
+.chatline__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.5);
+}

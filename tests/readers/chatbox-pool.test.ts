@@ -7,7 +7,7 @@ function box(x: number, y: number): BoxLike {
 }
 
 function line(text: string, color: RGB = [255, 255, 255]): ChatLine {
-  return { text, color, fragments: [text] };
+  return { text, colors: [color], fragments: [text] };
 }
 
 /**

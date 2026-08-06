@@ -7,7 +7,15 @@ export type RGB = [number, number, number];
 
 export type ChatLine = {
   text: string;
-  color: RGB;
+  /**
+   * Distinct colours present in the line.
+   *
+   * A chat line is not one colour — the reader splits it into per-colour
+   * fragments, so a message can be white with a coloured name or item in it.
+   * Matching against every colour present is what stops a filter from missing a
+   * line whose relevant part is not the first fragment.
+   */
+  colors: RGB[];
   /** Per-colour fragments of the line, as the chatbox reader splits them. */
   fragments: string[];
 };

@@ -92,7 +92,7 @@ describe("TickLoop", () => {
   });
 
   it("fires a chat alerter from pooled lines", () => {
-    const chat = pool([{ text: "A Seren spirit appears", color: [0, 255, 255], fragments: [] }]);
+    const chat = pool([{ text: "A Seren spirit appears", colors: [[0, 255, 255]], fragments: [] }]);
     const loop = new TickLoop(deps({ chat }));
     loop.setAlerters([
       alerter({
@@ -105,7 +105,7 @@ describe("TickLoop", () => {
   });
 
   it("skips paused alerters", () => {
-    const chat = pool([{ text: "A Seren spirit appears", color: [0, 255, 255], fragments: [] }]);
+    const chat = pool([{ text: "A Seren spirit appears", colors: [[0, 255, 255]], fragments: [] }]);
     const loop = new TickLoop(deps({ chat }));
     loop.setAlerters([
       alerter({

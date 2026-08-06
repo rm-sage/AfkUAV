@@ -5,6 +5,7 @@ import * as dialogModule from "alt1/dialog";
 import * as targetModule from "alt1/targetmob";
 import * as dropsModule from "alt1/dropsmenu";
 import { interopDefault, interopNamed } from "~/alt1-io/interop";
+import { captureRs } from "~/alt1-io/host";
 import { AnchoredReader, type ReaderLike } from "~/readers/anchored-reader";
 import type { ActionbarState, BuffSlot, DropEvent, TargetState } from "~/readers/bundle";
 import type { Needle } from "~/readers/buff-match";
@@ -135,6 +136,24 @@ export function makeBuffReader(debuffs: boolean): ReaderLike<unknown, BuffSlot[]
       return slots;
     },
   };
+}
+
+/**
+ * One-shot read of the buff bar, for the capture picker.
+ *
+ * Uses a throwaway reader so the running one's cached position and state are
+ * untouched by someone opening the editor.
+ */
+export function probeBuffs(debuffs: boolean): BuffSlot[] | null {
+  try {
+    const reader = makeBuffReader(debuffs);
+    const img = captureRs();
+    if (img === null) return null;
+    if (reader.find(img) === null) return null;
+    return reader.read(img);
+  } catch {
+    return null;
+  }
 }
 
 export function buffReader(debuffs: boolean): AnchoredReader<unknown, BuffSlot[]> {
