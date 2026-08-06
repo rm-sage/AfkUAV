@@ -273,6 +273,102 @@ body {
   background: var(--bg-row-hover);
 }
 
+/* ---------- drag and drop ---------- */
+
+.row {
+  /* Neighbours slide to open a gap; the lifted row opts out below. */
+  transition:
+    transform 0.19s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.19s ease,
+    background 0.14s ease,
+    border-color 0.14s ease;
+  touch-action: none;
+}
+
+.row__grip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  align-self: stretch;
+  padding: 0 5px 0 0;
+  margin-right: 1px;
+  color: var(--text-faint);
+  font-size: 13px;
+  line-height: 1;
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.14s ease, color 0.14s ease;
+}
+
+.row:hover .row__grip,
+.row--dragging .row__grip {
+  opacity: 1;
+}
+
+.row__grip:hover {
+  color: var(--text);
+}
+
+.row--dragging {
+  /* Follows the pointer, so animating its transform would lag the cursor. */
+  transition: box-shadow 0.19s ease, background 0.14s ease;
+  z-index: 5;
+  cursor: grabbing;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55);
+  border-color: var(--accent);
+  background: var(--bg-row-hover);
+}
+
+.row--dragging .row__grip {
+  cursor: grabbing;
+}
+
+/* The centre band of a row means "group with this one". */
+.row--groupinto {
+  border-color: var(--ok);
+  background: rgba(74, 222, 128, 0.14);
+  animation: grouppulse 0.9s ease-in-out infinite;
+}
+
+@keyframes grouppulse {
+  50% {
+    border-color: rgba(74, 222, 128, 0.45);
+  }
+}
+
+.list--dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+/* New rows and group headings ease in rather than snapping into place. */
+.group,
+.row {
+  animation: rowin 0.22s ease;
+}
+
+@keyframes rowin {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.list--dragging .row,
+.list--dragging .group {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row,
+  .group,
+  .held,
+  .toolbtn {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 .row__bar {
   position: absolute;
   inset: 0 auto 0 0;

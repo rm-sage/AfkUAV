@@ -6,6 +6,8 @@ import { toAfkWardenPreset } from "~/import/export";
 import type { AnchorHealth } from "~/readers/anchor";
 import { AlertEditor } from "~/ui/AlertEditor";
 import { SettingsDialog } from "~/ui/SettingsDialog";
+import { useDragList, type DragState } from "~/ui/useDragList";
+import type { DropTarget } from "~/engine/reorder";
 
 export type PresetAction =
   | { kind: "new"; name: string }
@@ -25,6 +27,7 @@ export type AppProps = {
   /** index null means "append a new alert". */
   onSaveAlert(index: number | null, alert: AlerterBase): void;
   onDeleteAlert(index: number): void;
+  onReorder(from: number, target: DropTarget): void;
   onPresetAction(action: PresetAction): void;
 };
 
@@ -61,25 +64,51 @@ function HealthPill({ health, boxes }: { health: AnchorHealth; boxes: number }) 
 
 function Row({
   a,
+  index,
+  drag,
+  shift,
   onTogglePause,
   onEdit,
+  onGrip,
 }: {
   a: ActiveAlerter;
+  index: number;
+  drag: DragState | null;
+  shift: number;
   onTogglePause(): void;
   onEdit(): void;
+  onGrip(e: PointerEvent): void;
 }) {
+  const dragging = drag?.from === index;
+  const isDropTarget = drag?.target?.kind === "onto" && drag.target.index === index;
+
   const cls = [
     "row",
     a.state.triggered ? "row--fired" : "",
     a.config.paused ? "row--paused" : "",
     a.error !== null ? "row--broken" : "",
+    dragging ? "row--dragging" : "",
+    isDropTarget ? "row--groupinto" : "",
   ]
     .filter(Boolean)
     .join(" ");
 
+  const style = dragging
+    ? { transform: `translateY(${drag.offsetY}px) scale(1.02)` }
+    : shift !== 0
+      ? { transform: `translateY(${shift}px)` }
+      : undefined;
+
   return (
-    <div class={cls} title={a.error ?? a.config.tooltip ?? a.config.name}>
+    <div class={cls} data-index={index} style={style} title={a.error ?? a.config.tooltip ?? a.config.name}>
       <div class="row__bar" style={{ width: `${Math.round(a.state.bar * 100)}%` }} />
+      <span
+        class="row__grip"
+        title="Drag to reorder — drop onto another alert to group them"
+        onPointerDown={onGrip}
+      >
+        ⠿
+      </span>
       <span class="row__name">{a.config.name || "(unnamed)"}</span>
       <span class="row__side">
         {a.error !== null ? <span class="badge badge--err">!</span> : null}
@@ -224,6 +253,11 @@ export function App(props: AppProps) {
   const { loop, presets, activePreset, settings } = props;
   const preset = presets.find((p) => p.name === activePreset) ?? null;
 
+  const { drag, listRef, startDrag, shiftFor } = useDragList(props.onReorder);
+  // Rows are uniform, so one step covers the gap-opening animation. Drop
+  // decisions use real measured rects, so an imprecise value here is cosmetic.
+  const rowHeight = 37;
+
   // Preserve configured order while collecting rows under their group heading.
   const sections = useMemo(() => {
     const out: Array<{ group: string | null; items: Array<{ a: ActiveAlerter; i: number }> }> = [];
@@ -350,7 +384,7 @@ export function App(props: AppProps) {
         </div>
       ) : null}
 
-      <main class="list">
+      <main class={`list${drag !== null ? " list--dragging" : ""}`} ref={listRef}>
         {anyAlerters ? (
           sections.map((s, n) => (
             <>
@@ -363,8 +397,12 @@ export function App(props: AppProps) {
                 <Row
                   key={i}
                   a={a}
+                  index={i}
+                  drag={drag}
+                  shift={shiftFor(i, rowHeight)}
                   onTogglePause={() => props.onTogglePause(i)}
                   onEdit={() => setEditing({ index: i })}
+                  onGrip={(e) => startDrag(i, e)}
                 />
               ))}
             </>

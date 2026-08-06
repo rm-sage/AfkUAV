@@ -24,6 +24,7 @@ import { ChatboxPool } from "~/readers/chatbox-pool";
 import { TICK_MS, TickLoop } from "~/engine/loop";
 import { Store } from "~/store/storage";
 import { PresetSchema, type AlerterBase, type Preset, type Settings } from "~/store/schema";
+import { applyDrop } from "~/engine/reorder";
 import { speak } from "~/alerting/speech";
 import { App, type PresetAction } from "~/ui/App";
 import "~/ui/styles.css";
@@ -178,6 +179,11 @@ function paint(): void {
       onDeleteAlert={(index) => {
         mutateAlerts((alerts) => {
           alerts.splice(index, 1);
+        });
+      }}
+      onReorder={(from, target) => {
+        mutateAlerts((alerts) => {
+          alerts.splice(0, alerts.length, ...applyDrop(alerts, from, target));
         });
       }}
       onPresetAction={handlePresetAction}
